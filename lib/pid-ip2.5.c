@@ -343,7 +343,14 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void) {
                 }
             }
         }
+        if (pidObjs[0].mode == 0)
+        {
         pidSetControl();
+        } else if (pidObjs[0].mode == 1)
+        {
+            tiHSetDC(1, pidObjs[0].pwmDes);
+            tiHSetDC(2, pidObjs[1].pwmDes);
+        }
 
         if(pidObjs[0].onoff) {
             telemGetPID();
@@ -438,11 +445,11 @@ void pidGetState()
 		p_state = p_state - (long)(encPos[i].offset <<2); 	// subtract offset to get zero position
 		if (i==0)
 		{
-			pidObjs[i].p_state = -p_state; //fix for encoder alignment
+			pidObjs[i].p_state = p_state; //fix for encoder alignment
 		}
 		else
 		{
-			pidObjs[i].p_state = p_state;
+			pidObjs[i].p_state = -p_state;
 		}
 		
 	}

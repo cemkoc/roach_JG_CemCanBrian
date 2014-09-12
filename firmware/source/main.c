@@ -71,8 +71,8 @@ int main() {
     cmdSetup();
 
     // Radio setup
-    radioInit(RADIO_TXPQ_MAX_SIZE, RADIO_RXPQ_MAX_SIZE, 0); //BUG, switched sizes
-    radioSetChannel(RADIO_MY_CHAN);
+    radioInit(RADIO_RXPQ_MAX_SIZE, RADIO_TXPQ_MAX_SIZE, 0);
+    radioSetChannel(RADIO_CHANNEL);
     radioSetSrcAddr(RADIO_SRC_ADDR);
     radioSetSrcPanID(RADIO_PAN_ID);
 

@@ -44,6 +44,7 @@ static unsigned char cmdGetAMSPos(unsigned char type, unsigned char status, unsi
 
 //Motor and PID functions
 static unsigned char cmdSetThrustOpenLoop(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame);
+static unsigned char cmdSetMotorMode(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame);
 static unsigned char cmdSetPIDGains(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame);
 static unsigned char cmdPIDStartMotors(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame);
 static unsigned char cmdPIDStopMotors(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame);
@@ -75,6 +76,7 @@ void cmdSetup(void) {
     cmd_func[CMD_TEST_RADIO] = &test_radio;
     cmd_func[CMD_TEST_MPU] = &test_mpu;
     cmd_func[CMD_SET_THRUST_OPEN_LOOP] = &cmdSetThrustOpenLoop;
+    cmd_func[CMD_SET_MOTOR_MODE] = &cmdSetMotorMode;
     cmd_func[CMD_PID_START_MOTORS] = &cmdPIDStartMotors;
     cmd_func[CMD_SET_PID_GAINS] = &cmdSetPIDGains;
     cmd_func[CMD_GET_AMS_POS] = &cmdGetAMSPos;
@@ -120,7 +122,7 @@ unsigned char cmdWhoAmI(unsigned char type, unsigned char status, unsigned char 
         i++;
     }
     string_length=i;
-    radioSendData(RADIO_DEST_ADDR, status, CMD_WHO_AM_I,
+    radioSendData(RADIO_DST_ADDR, status, CMD_WHO_AM_I, //TODO: Robot should respond to source of query, not hardcoded address
             string_length, version_string, 0);
     return 1; //success
 }
@@ -134,7 +136,7 @@ unsigned char cmdGetAMSPos(unsigned char type, unsigned char status,
     // motor_count[0] = encPos[0].pos;
     // motor_count[1] = encPos[1].pos;
 
-    radioSendData(RADIO_DEST_ADDR, status, CMD_GET_AMS_POS,
+    radioSendData(RADIO_DST_ADDR, status, CMD_GET_AMS_POS,  //TODO: Robot should respond to source of query, not hardcoded address
             sizeof(motor_count), (unsigned char *)motor_count, 0);
     return 1;
 }
@@ -149,7 +151,7 @@ unsigned char cmdStartTimedRun(unsigned char type, unsigned char status, unsigne
         checkSwapBuff(i);
         pidOn(i);
     }
-
+    pidObjs[0].mode = 0;
     pidStartTimedTrial(run_time);
 
     return 1;
@@ -195,6 +197,18 @@ unsigned char cmdSetThrustOpenLoop(unsigned char type, unsigned char status, uns
     return 1;
  } 
 
+ unsigned char cmdSetMotorMode(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame) {
+
+
+    int thrust1 = frame[0] + (frame[1] << 8);
+    int thrust2 = frame[2] + (frame[3] << 8);
+
+    pidObjs[0].pwmDes = thrust1;
+    pidObjs[1].pwmDes = thrust2;
+
+    pidObjs[0].mode = 1;
+ }
+
  unsigned char cmdSetPIDGains(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame) {
     int Kp, Ki, Kd, Kaw, ff;
     int idx = 0;
@@ -212,7 +226,7 @@ unsigned char cmdSetThrustOpenLoop(unsigned char type, unsigned char status, uns
     ff = frame[idx] + (frame[idx+1] << 8); idx+=2;
     pidSetGains(1,Kp,Ki,Kd,Kaw, ff);
 
-    radioSendData(RADIO_DEST_ADDR, status, CMD_SET_PID_GAINS, 20, frame, 0);
+    radioSendData(RADIO_DST_ADDR, status, CMD_SET_PID_GAINS, 20, frame, 0); //TODO: Robot should respond to source of query, not hardcoded address
     //Send confirmation packet
     // WARNING: Will fail at high data throughput
     //radioConfirmationPacket(RADIO_DEST_ADDR, CMD_SET_PID_GAINS, status, 20, frame);
@@ -288,7 +302,7 @@ unsigned char cmdZeroPos(unsigned char type, unsigned char status, unsigned char
     motor_count[0] = pidObjs[0].p_state;
     motor_count[1] = pidObjs[1].p_state;
 
-    radioSendData(RADIO_DEST_ADDR, status, CMD_GET_AMS_POS,
+    radioSendData(RADIO_DST_ADDR, status, CMD_GET_AMS_POS,  //TODO: Robot should respond to source of query, not hardcoded address
         sizeof(motor_count), (unsigned char *)motor_count, 0);
     pidZeroPos(0); pidZeroPos(1);
     return 1;
