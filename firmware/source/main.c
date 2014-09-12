@@ -15,7 +15,7 @@
 * Date: 2011-04-13
 * Author: AMH, Ryan Julian
 *********************************************************************************************************/
-#include "p33Fxxxx.h"
+#include <xc.h>
 #include "init.h"
 #include "init_default.h"
 #include "timer.h"
@@ -35,11 +35,15 @@
 #include "pid-ip2.5.h"
 #include "adc_pid.h"
 #include "cmd.h"
-#include "uart_driver.h"
+//#include "uart_driver.h"
 #include "ppool.h"
 #include "carray.h"
 
 #include <stdlib.h>
+
+//added for skinproc
+#include "tactile_driver.h"
+
 
 static Payload rx_payload;
 static MacPacket rx_packet;
@@ -67,34 +71,74 @@ int main() {
     cmdSetup();
 
     // Radio setup
-    radioInit(RADIO_RXPQ_MAX_SIZE, RADIO_TXPQ_MAX_SIZE, 0);
+    radioInit(RADIO_TXPQ_MAX_SIZE, RADIO_RXPQ_MAX_SIZE, 0); //BUG, switched sizes
     radioSetChannel(RADIO_MY_CHAN);
     radioSetSrcAddr(RADIO_SRC_ADDR);
     radioSetSrcPanID(RADIO_PAN_ID);
 
     uart_tx_packet = NULL;
     uart_tx_flag = 0;
-    uartInit(&cmdPushFunc);
-
+    //uartInit(&cmdPushFunc);
+    tactileInit();
+    
     // Need delay for encoders to be ready
     delay_ms(100);
-    amsEncoderSetup();
+    //amsEncoderSetup(); //no encoders present
     mpuSetup(1);
     tiHSetup();
-    dfmemSetup(0);
+    //dfmemSetup(0); //Chip has been removed from board
     telemSetup();
-    adcSetup();
-    pidSetup();
+    //adcSetup();
+    //pidSetup();
 
 
 
     LED_1 = 0;
+    LED_2 = 0;
+    LED_3 = 0;
+    /*delay_ms(1000);
+    LED_1 = 0;
+    LED_2 = 1;
+    LED_3 = 0;
+    delay_ms(1000);
+    LED_1 = 0;
+    LED_2 = 0;
     LED_3 = 1;
+    delay_ms(1000);
+    LED_1 = 0;
+    LED_2 = 0;
+    LED_3 = 0;
+
+    unsigned char rxChar = 0;
+    unsigned char rowcol[2];
+    rowcol[0] = 9;
+    rowcol[1] = 6;
+    unsigned char *val = malloc(109);
+    val[0] = 0x00;
+    val[108] = 0x00;*/
     while(1){
         // Send outgoing radio packets
-        radioProcess();
+        //radioProcess();
 
         // Send outgoing uart packets
+
+        //radioSendData(RADIO_DEST_ADDR, 5, CMD_TACTILE,2, rowcol, 0);
+        //delay_ms(500);
+
+        //test code above
+        
+        //checkTactileBuffer();
+        //radioSendData(RADIO_DEST_ADDR, 'X', CMD_TACTILE, 109, val, 0);
+        //delay_ms(10);
+        //if (val[0] == 0xFF){
+        //    val[0] = 0x00;
+        //    val[108] = 0x00;
+        //} else {
+        //    val[0] = val[0] + 1;
+        //    val[108] = val[108] + 1;
+        //}
+        
+
         if(uart_tx_flag) {
             uartSendPacket(uart_tx_packet);
             uart_tx_flag = 0;
@@ -119,12 +163,15 @@ int main() {
                    rx_function = (test_function)(rx_payload->test);
                    if(rx_function != NULL) {
                        LED_2 = ~LED_2;
+                       //LED_1 = 1;
                        (rx_function)(payGetType(rx_payload), payGetStatus(rx_payload), payGetDataLength(rx_payload), payGetData(rx_payload));
                    }
                }
                ppoolReturnFullPacket(rx_packet);
             }
         }
-    }
+        //LED_1 = 0;
+    } //comment here for testing
     return 0;
+
 }

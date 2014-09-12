@@ -1,11 +1,12 @@
-DEST_ADDR = '\x21\x02'
+DEST_ADDR = '\x30\x02'
 xb = []
 ser = []
 
 #Base station
-BS_COMPORT = 'COM4'
+# BS_COMPORT = 'COM4'
 # BS_COMPORT = '/dev/ttyUSB0'
-BS_BAUDRATE = 230400
+BS_COMPORT = '/dev/tty.usbserial-A700eXbF'
+BS_BAUDRATE = 57600 #230400
 #XBee
 # BS_COMPORT = 'COM2'
 # BS_BAUDRATE = 57600
@@ -36,4 +37,4 @@ numSamples = 0
 moveq = "NOT SET"
 
 robotQueried = False
-maxQueries = 8
+maxQueries = 2

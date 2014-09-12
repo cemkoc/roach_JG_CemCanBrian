@@ -19,7 +19,11 @@
 #define CMD_ZERO_POS 				0x90
 #define CMD_START_TIMED_RUN			0x91 
 #define CMD_PID_STOP_MOTORS         0x92         
-#define CMD_SET_PHASE   			0x93	     
+#define CMD_SET_PHASE   			0x93
+
+//added for tactile
+#define CMD_TACTILE                             0x94
+
 // Redefine
 
 void cmdSetup(void);

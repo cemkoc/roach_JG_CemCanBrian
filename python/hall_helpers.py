@@ -300,7 +300,9 @@ def queryRobot():
         xb_send(0, command.WHO_AM_I, "Robot Echo")
         time.sleep(0.3)
         queries = queries + 1
-    if queries == shared.maxQueries:
+    if shared.robotQueried:
+        print "Robot successfully queried!"
+    elif queries == shared.maxQueries:
         print "Unable to query robot."
         xb_safe_exit()
     #Otherwise, control falls through back to the program

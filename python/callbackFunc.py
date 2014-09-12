@@ -3,6 +3,7 @@ from struct import pack,unpack
 import time
 
 import shared
+from tactile import *
 
 #Dictionary of packet formats, for unpack()
 pktFormat = { \
@@ -25,6 +26,9 @@ pktFormat = { \
     command.SET_VEL_PROFILE:        '8h' ,\
     command.WHO_AM_I:               '', \
     command.ZERO_POS:               '=2l', \
+
+    #added for skinproc
+    command.TACTILE:                '', \
     }
                
 #XBee callback function, called every time a packet is recieved
@@ -34,12 +38,17 @@ def xbee_received(packet):
     #(src_addr, ) = unpack('H', packet.get('source_addr'))
     #id = packet.get('id')
     #options = ord(packet.get('options'))
-   
-    status = ord(rf_data[0])
-    type = ord(rf_data[1])
-    # print 'Received %d' % type
-    data = rf_data[2:]   
-    
+
+    try:
+        type = ord(rf_data[1])
+        status = ord(rf_data[0])
+        # print 'Received %d' % type
+        data = rf_data[2:]
+    except:
+        print packet
+        print rf_data
+        print "non-valid packet received"
+        return
     #Record the time the packet is received, so command timeouts
     # can be done
     shared.last_packet_time = time.time()
@@ -128,15 +137,20 @@ def xbee_received(packet):
         elif (type == command.WHO_AM_I):
             #print "whoami:",status, hex(type), data
             print "whoami:",data
+            print "status:",status
             shared.robotQueried = True
+        
+        #added for skinproc
+        elif (type == command.TACTILE):
+            #print "received tactile mode:",data[0]
+            #print "status:",status
+            handleTactilePacket(data)
         else:    
             pass
-    
+        
     except Exception as args:
         print "\nGeneral exception from callbackfunc:",args
         print "Attemping to exit cleanly..."
         self.xb.halt()
         self.ser.close()
         sys.exit()
-
-

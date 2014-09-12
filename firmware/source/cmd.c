@@ -25,6 +25,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+//added for skinproc
+#include "tactile_driver.h"
+
 unsigned char (*cmd_func[MAX_CMD_FUNC])(unsigned char, unsigned char, unsigned char, unsigned char*);
 void cmdError(void);
 
@@ -53,6 +56,11 @@ static unsigned char cmdStartTimedRun(unsigned char type, unsigned char status, 
 static unsigned char cmdStartTelemetry(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame);
 static unsigned char cmdEraseSectors(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame);
 static unsigned char cmdFlashReadback(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame);
+
+//added for skinproc
+static unsigned char cmdTactile(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame);
+
+
 /*-----------------------------------------------------------------------------
  *          Public functions
 -----------------------------------------------------------------------------*/
@@ -79,7 +87,9 @@ void cmdSetup(void) {
     cmd_func[CMD_SET_PHASE] = &cmdSetPhase;   
     cmd_func[CMD_START_TIMED_RUN] = &cmdStartTimedRun;
     cmd_func[CMD_PID_STOP_MOTORS] = &cmdPIDStopMotors;
-
+    
+    //added for skinproc
+    cmd_func[CMD_TACTILE] = &cmdTactile;
 }
 
 void cmdPushFunc(MacPacket rx_packet) {
@@ -313,5 +323,13 @@ void cmdError() {
 }
 
 static unsigned char cmdNop(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame) {
+    return 1;
+}
+
+
+//added for skinproc
+unsigned char cmdTactile(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame) {
+    LED_1 ^= 1;
+    handleSkinRequest(length, frame);
     return 1;
 }
