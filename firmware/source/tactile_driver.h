@@ -32,10 +32,8 @@
 
 void tactileInit();
 void checkFrameSize();
-void checkTactileBuffer();
 void handleSkinRequest(unsigned char length,unsigned char *frame);
 unsigned char sendTactileCommand(unsigned char length,unsigned char *frame);
-void skinDataReceived(unsigned char rx_byte);
 void handleSkinData(unsigned char length, unsigned char *data);
 //#ifdef	__cplusplus
 //extern "C" {
