@@ -38,3 +38,4 @@ moveq = "NOT SET"
 
 robotQueried = False
 maxQueries = 2
+enter = None

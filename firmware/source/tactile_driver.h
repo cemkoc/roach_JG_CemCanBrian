@@ -28,7 +28,7 @@
 
 // buffer lengths
 #define SMALL_BUFFER            3
-#define LARGE_BUFFER            109
+#define LARGE_BUFFER            110
 
 void tactileInit();
 void checkFrameSize();

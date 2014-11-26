@@ -12,7 +12,7 @@
         #define TACTILEUART             1
 
 	// UART Configuration
-	#define U2BAUD    		9								// For 1 Mbps (HIGH SPEED)
+	#define U2BAUD    		9  // For 1 Mbps (HIGH SPEED)
 	#define U1BRGH  		1
 #endif
 
@@ -152,6 +152,9 @@ void handleSkinRequest(unsigned char length, unsigned char *frame) {
             break;
         case TACTILE_MODE_B: //haven't checked yet
             rx_idx = TACTILE_MODE_B;
+            buffer_length = 0;
+            expected_length = max_buffer_length-1;
+            buffer = tempframe;
             sendTactileCommand(length,frame);
             break;
         case TACTILE_MODE_T:
@@ -211,7 +214,7 @@ void skinDataReceived(unsigned char rx_byte){
                 rowcol[1] = 6;
                 string_length=2;
                 status = 3;
-                radioSendData(RADIO_DEST_ADDR, status, CMD_TACTILE,
+                radioSendData(RADIO_DST_ADDR, status, CMD_TACTILE,
                         string_length, rowcol, 0);
                 return;
                 */
@@ -358,10 +361,10 @@ void handleSkinData(unsigned char length, unsigned char *data){
     if (length > 114) {
         length = 114;
     }
-    radioSendData(RADIO_DEST_ADDR, 0, CMD_TACTILE, length, data, 0);
+    radioSendData(RADIO_DST_ADDR, 0, CMD_TACTILE, length, data, 0);
     //data = data + length/2 - 1;
     //data[0] = rx_idx;
-    //radioSendData(RADIO_DEST_ADDR, 0, CMD_TACTILE, length/2 +1, data, 0);
+    //radioSendData(RADIO_DST_ADDR, 0, CMD_TACTILE, length/2 +1, data, 0);
 }
 
 //read data from the UART, and call the proper function based on the Xbee code

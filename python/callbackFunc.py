@@ -1,7 +1,7 @@
 from lib import command
 from struct import pack,unpack
 import time
-
+import tactile
 import shared
 from tactile import *
 
@@ -30,7 +30,7 @@ pktFormat = { \
     #added for skinproc
     command.TACTILE:                '', \
     }
-               
+
 #XBee callback function, called every time a packet is recieved
 def xbee_received(packet):
     rf_data = packet.get('rf_data')

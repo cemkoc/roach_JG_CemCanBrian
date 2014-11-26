@@ -138,12 +138,12 @@ int main() {
         //    val[108] = val[108] + 1;
         //}
         
-
+        /*
         if(uart_tx_flag) {
             uartSendPacket(uart_tx_packet);
             uart_tx_flag = 0;
         }
-
+        */
 
         // move received packets to function queue
         while (!radioRxQueueEmpty()) {
