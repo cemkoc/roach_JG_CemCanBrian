@@ -117,6 +117,13 @@ int main() {
     val[0] = 0x00;
     val[108] = 0x00;*/
     while(1){
+
+        /*LED_1 = ~LED_1;
+        LED_2 = ~LED_2;
+        LED_3 = ~LED_3;
+        delay_ms(500);
+        delay_ms(500);*/
+
         // Send outgoing radio packets
         //radioProcess();
 
