@@ -10,13 +10,14 @@ import threading
 import serial
 import shared
 import numpy as np
-
+import thread
   
 import termios
 import fcntl
 
 from hall_helpers import *
 
+import skinvisualizer
 
 ROWS = 0
 COLS = 0
@@ -72,8 +73,8 @@ def myGetch():
 def main():
     global poller
     poller = KeyboardPoller()
-    poller.start()
-
+    #poller.start()
+    thread.start_new_thread(skinvisualizer.main, ()) #uncomment this line to run opengl visualizer
     setupSerial()
     #return
     # Send robot a WHO_AM_I command, verify communications
@@ -86,7 +87,15 @@ def main():
     col = 0
     dur = 15
     period = 500
-    #samplePixel(row, col)
+    
+    while True:
+        break
+        #raw_input("hit enter")
+        #print "Sampling"
+        samplePixel(0, 0)
+        #testFrame()
+        time.sleep(0.5)
+    #return
     #sampleFrame(period)
     #time.sleep(3)
     #sampleFrame(period)
@@ -101,6 +110,7 @@ def main():
         bpack = bpack + 1
         #testFrame()
         sampleFrame(period)
+        #time.sleep(.02) #minimum working
         time.sleep(.02)
         #queryRobot()
         '''
@@ -113,6 +123,7 @@ def main():
         samplePixel(11, 4)
         time.sleep(.05)
         '''
+
         #print "main",enter.isSet()
     period = 250
     #while True:
@@ -162,11 +173,12 @@ def handleTactilePacket(data):
     #for i in range(0,len(data)):
     #    print "data: ", ord(data[i])
     if data[0] == 'A' or data[0] == 'C':
-        #print "row:", ord(data[1]), "col:", ord(data[2])
-        val = ord(data[3]) + (ord(data[4])<<8)
-        #print "value =", val
+        print "row:", ord(data[1]), "col:", ord(data[2])
+        val = ord(data[3]) + (ord(data[4])*256)
+        print "value =", val
         grid[count] = val
         count = count + 1
+        count = 0
         if count == 4:
             count = 0
             packetnumber = packetnumber + 1
@@ -204,19 +216,30 @@ def handleTactilePacket(data):
         #print " ", newframe[1,0], newframe[0,0]
         
         #newframe = newframe * 100
-        print mins
-        print maxes
-
+        #print mins
+        #print maxes
+        '''
         print("    %4.f  " % (frame[5]))
         print("%4.f    %4.f" % (frame[4], frame[0]))
         print("%4.f    %4.f" % (frame[3], frame[1]))
         print("    %4.f  " % (frame[2]))
-
+        
         print("    %.2f  " % (newframe[5]))
         print("%.2f    %.2f" % (newframe[4], newframe[0]))
         print("%.2f    %.2f" % (newframe[3], newframe[1]))
         print("    %.2f  " % (newframe[2]))
 
+        for i in [0,2,4,6,9,11,13,15]:
+            print("%.2f " % newframe[i]),
+        print
+        '''
+        
+        print("    %.2f    :    :    %.2f    " % (newframe[2],newframe[15]))
+        print("%.2f    %.2f:    :%.2f    %.2f" % (newframe[0],newframe[4],newframe[13],newframe[9]))
+        print("    %.2f    :    :    %.2f    " % (newframe[6],newframe[11]))
+        shared.zvals = [newframe[0],newframe[2],newframe[4],newframe[6],newframe[9],newframe[11],newframe[13],newframe[15]]
+
+        return
         averageMax = 50.0
         if shared.enter.isSet():
             if averageCount == 0:
@@ -254,10 +277,8 @@ def handleTactilePacket(data):
         print "shell has", ROWS, "rows and", COLS, "columns."
         
         #calibrated values hardcoded
-        mins = np.ones(ROWS*COLS) * 0
-        mins[2] = 121
-        maxes = np.ones(ROWS*COLS) * 4024
-        maxes[1] = 4025
+        mins = np.ones(ROWS*COLS) * 200
+        maxes = np.ones(ROWS*COLS) * 4000
 
     elif data[0] == 'T':
         '''for i in range(len(data)):
@@ -265,6 +286,9 @@ def handleTactilePacket(data):
                 print data[i]
             else:
                 print ord(data[i])'''
+
+        print "received T packet", bpack
+        bpack = bpack + 1
         print map(ord, data)
     elif data[0] == 'X':
         print ord(data[0]),ord(data[-1])

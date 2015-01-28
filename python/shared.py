@@ -39,3 +39,4 @@ moveq = "NOT SET"
 robotQueried = False
 maxQueries = 2
 enter = None
+zvals = [0,0,0,0,0,0,0,0]
