@@ -122,8 +122,8 @@ int main() {
         LED_2 = ~LED_2;
         LED_3 = ~LED_3;
         delay_ms(500);
-        delay_ms(500);*/
-
+        delay_ms(500);
+        */
         // Send outgoing radio packets
         //radioProcess();
 

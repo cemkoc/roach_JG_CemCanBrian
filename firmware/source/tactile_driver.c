@@ -69,21 +69,24 @@ void checkFrameSize() {
     buffer_length = 0;
     unsigned char temp1[max_buffer_length];
     buffer = temp1;
-
     unsigned char length = 1;
     unsigned char test[1];
-    test[0] = TACTILE_MODE_G;
+    rx_idx = TACTILE_MODE_G;
+    test[0] = rx_idx;
     delay_ms(500); //waiting
     delay_ms(500); //for
     delay_ms(500); //skinproc
     delay_ms(500); //to startup
     sendTactileCommand(length, test);
-    delay_ms(500); //wait for
-    delay_ms(500); //skinproc
-
     Nop();
     Nop();
-    if (buffer[0] == TACTILE_MODE_G) {
+    Nop();
+    //blocking wait for skinproc to answer
+    while (buffer_length < 3) {
+        Nop();
+    }
+    
+    if (buffer[0] == rx_idx) {
         TACTILE_ROWS = buffer[1];
         TACTILE_COLS = buffer[2];
         max_buffer_length = TACTILE_ROWS*TACTILE_COLS*2+2;
@@ -91,10 +94,17 @@ void checkFrameSize() {
 
     }
     else {
+        char test = buffer[0];
+        TACTILE_ROWS = buffer[0];
+        TACTILE_COLS = buffer[1];
         max_buffer_length = LARGE_BUFFER;
+        buffer_length = (unsigned int)test;
         buffer_length = 0;
     }
 
+    Nop();
+    Nop();
+    rx_idx = TACTILE_RX_IDLE;
 }
 
 
@@ -106,14 +116,17 @@ void handleSkinRequest(unsigned char length, unsigned char *frame) {
     static unsigned int expected_length;
     switch (cmd) {
         case TACTILE_MODE_G: //query number of rows and columns
+            rx_idx = TACTILE_MODE_G;
+            //TACTILE_ROWS = 0x00;
+            //TACTILE_COLS = 0x00;
             buffer_length = 3;
             expected_length = 3;
-            rx_idx = TACTILE_MODE_G;
-            unsigned char rowcol[3];
-            rowcol[0] = rx_idx;
-            rowcol[1] = TACTILE_ROWS;
-            rowcol[2] = TACTILE_COLS;
-            buffer = rowcol;
+            buffer[0] = rx_idx;
+            buffer[1] = TACTILE_ROWS;
+            buffer[2] = TACTILE_COLS;
+            //buffer = rowcol;
+            //buffer = tempframe;
+            //sendTactileCommand(length,frame);
             break;
         case TACTILE_MODE_A:
             rx_idx = TACTILE_MODE_A;
@@ -186,9 +199,13 @@ void __attribute__((__interrupt__, no_auto_psv)) _U2RXInterrupt(void) {
     LED_1 = ~LED_1;
     while(U2STAbits.URXDA) {
         rx_byte = U2RXREG;
-        buffer[buffer_length] = rx_byte;
-        Nop();
-        ++buffer_length;
+        if (buffer_length == 0 && rx_byte != rx_idx) {
+            Nop();  //first byte received isn't rx_idx
+        } else {
+            buffer[buffer_length] = rx_byte;
+            ++buffer_length;
+        }
+
 
     }
 
