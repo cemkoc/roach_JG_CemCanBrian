@@ -2,7 +2,7 @@ import random
 import shared
 import pygame
 from pygame.locals import *
-
+import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
@@ -47,103 +47,104 @@ surfaces = (
 def ReflectorUpdate():
     global reflectors
     reflector0 = (
-        (-2.6, -0.25, z0),
-        (-2.6, 0.25, z0),
-        (-2.1, 0.25, z0),
-        (-2.1, -0.25, z0)
+        (-2.6+dy0, -0.85-dx0, z0),
+        (-2.6+dy0, 0.85-dx0, z0),
+        (-0.9+dy0, 0.85-dx0, z0),
+        (-0.9+dy0, -0.85-dx0, z0)
         )
     reflector1 = (
-        (-2, 0.35, z1),
-        (-2, 0.85, z1),
-        (-1.5, 0.85, z1),
-        (-1.5, 0.35, z1)
-        )
-    reflector2 = (
-        (-1.4, -0.25, z2),
-        (-1.4, 0.25, z2),
-        (-0.9, 0.25, z2),
-        (-0.9, -0.25, z2)
-        )
-    reflector3 = (
-        (-2, -0.85, z3),
-        (-2, -0.35, z3),
-        (-1.5, -0.35, z3),
-        (-1.5, -0.85, z3)
-        )
-    reflector4 = (
-        (2.6, -0.25, z4),
-        (2.6, 0.25, z4),
-        (2.1, 0.25, z4),
-        (2.1, -0.25, z4)
-        )
-    reflector5 = (
-        (2, -0.35, z5),
-        (2, -0.85, z5),
-        (1.5, -0.85, z5),
-        (1.5, -0.35, z5)
-        )
-    reflector6 = (
-        (1.4, -0.25, z6),
-        (1.4, 0.25, z6),
-        (0.9, 0.25, z6),
-        (0.9, -0.25, z6)
-        )
-    reflector7 = (
-        (2, 0.85, z7),
-        (2, 0.35, z7),
-        (1.5, 0.35, z7),
-        (1.5, 0.85, z7)
+        (2.6+dy1, -0.85-dx1, z1),
+        (2.6+dy1, 0.85-dx1, z1),
+        (0.9+dy1, 0.85-dx1, z1),
+        (0.9+dy1, -0.85-dx1, z1)
         )
     reflectors = (
         (reflector0),
-        (reflector1),
-        (reflector2),
-        (reflector3),
-        (reflector4),
-        (reflector5),
-        (reflector6),
-        (reflector7)
+        (reflector1)
         )
 
-def RandomizeZ():
+def Randomize():
+    global dx0
+    global dx1
+    global dy0
+    global dy1
     global z0
     global z1
-    global z2
-    global z3
-    global z4
-    global z5
-    global z6
-    global z7
     scale = 1
     offset = 0.2
+    dx0 = random.random()
+    dx1 = random.random()
+    dy0 = random.random()
+    dy1 = random.random()
     z0 = random.random()*scale+offset
     z1 = random.random()*scale+offset
-    z2 = random.random()*scale+offset
-    z3 = random.random()*scale+offset
-    z4 = random.random()*scale+offset
-    z5 = random.random()*scale+offset
-    z6 = random.random()*scale+offset
-    z7 = random.random()*scale+offset
     
-def UpdateZ():
+def Update():
+    global dx0
+    global dx1
+    global dy0
+    global dy1
     global z0
     global z1
-    global z2
-    global z3
-    global z4
-    global z5
-    global z6
-    global z7
-    scale = 1
-    offset = 0.2
-    z0 = (1-shared.zvals[0])*scale+offset
-    z1 = (1-shared.zvals[1])*scale+offset
-    z2 = (1-shared.zvals[2])*scale+offset
-    z3 = (1-shared.zvals[3])*scale+offset
-    z4 = (1-shared.zvals[4])*scale+offset
-    z5 = (1-shared.zvals[5])*scale+offset
-    z6 = (1-shared.zvals[6])*scale+offset
-    z7 = (1-shared.zvals[7])*scale+offset
+    scale = 1 #cm/mm
+    dx0 = shared.xyzvals[0]*scale
+    dy0 = shared.xyzvals[1]*scale
+    z0 = shared.xyzvals[2]*scale-1.5
+    dx1 = shared.xyzvals[3]*scale
+    dy1 = shared.xyzvals[4]*scale
+    z1 = shared.xyzvals[5]*scale-1.5
+
+#arrays for moving average
+full = False
+index = 0
+count = 10
+dx0_saved = np.zeros(count)
+dx1_saved = np.zeros(count)
+dy0_saved = np.zeros(count)
+dy1_saved = np.zeros(count)
+z0_saved = np.zeros(count)
+z1_saved = np.zeros(count)
+
+def MovingAverage():
+    global dx0
+    global dx1
+    global dy0
+    global dy1
+    global z0
+    global z1
+    global dx0_saved
+    global dx1_saved
+    global dy0_saved
+    global dy1_saved
+    global z0_saved
+    global z1_saved
+    global index
+    global full
+    if index >= count:
+        index = 0
+    dx0_saved[index] = dx0
+    dx1_saved[index] = dx1
+    dy0_saved[index] = dy0
+    dy1_saved[index] = dy1
+    z0_saved[index] = z0
+    z1_saved[index] = z1
+    index = index + 1
+    if full:
+        dx0 = np.mean(dx0_saved)
+        dx1 = np.mean(dx1_saved)
+        dy0 = np.mean(dy0_saved)
+        dy1 = np.mean(dy1_saved)
+        z0 = np.mean(z0_saved)
+        z1 = np.mean(z1_saved)
+    else:
+        dx0 = np.mean(dx0_saved[:index])
+        dx1 = np.mean(dx1_saved[:index])
+        dy0 = np.mean(dy0_saved[:index])
+        dy1 = np.mean(dy1_saved[:index])
+        z0 = np.mean(z0_saved[:index])
+        z1 = np.mean(z1_saved[:index])
+        if index >= count:
+            full = True
 
 def DrawBoard():
     glBegin(GL_QUADS)
@@ -219,9 +220,10 @@ def main():
                     glRotatef(10,0,0,1)
         
         if randomize:
-            RandomizeZ()
+            Randomize()
         else:
-            UpdateZ()
+            Update()
+            MovingAverage()
         ReflectorUpdate()
         #glRotatef(1, 3, 1, 1)
         #glRotatef(1, 0, 0, 1)
@@ -232,5 +234,5 @@ def main():
         pygame.time.wait(10)
 
 if __name__ == '__main__':
-    randomize = 0
+    randomize = 1
     main()

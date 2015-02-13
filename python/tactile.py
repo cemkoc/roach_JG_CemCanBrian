@@ -18,6 +18,7 @@ import fcntl
 from hall_helpers import *
 
 import skinvisualizer
+import skinvisualizer2
 
 ROWS = 0
 COLS = 0
@@ -73,8 +74,8 @@ def myGetch():
 def main():
     global poller
     poller = KeyboardPoller()
-    #poller.start()
-    thread.start_new_thread(skinvisualizer.main, ()) #uncomment this line to run opengl visualizer
+    poller.start()
+    thread.start_new_thread(skinvisualizer2.main, ()) #uncomment this line to run opengl visualizer
     setupSerial()
     #return
     # Send robot a WHO_AM_I command, verify communications
@@ -88,13 +89,25 @@ def main():
     dur = 15
     period = 500
     
+    startScan();
+    time.sleep(1)
+    return
+
+    while True:
+        
+        raw_input("hit enter to start and stop");
+        startScan();
+        raw_input();
+        stopScan();
+    return
+
     while True:
         break
         #raw_input("hit enter")
         #print "Sampling"
         samplePixel(0, 0)
         #testFrame()
-        time.sleep(0.5)
+        time.sleep(0.1)
     #return
     #sampleFrame(period)
     #time.sleep(3)
@@ -109,9 +122,10 @@ def main():
         #print "sending test frame", bpack
         bpack = bpack + 1
         #testFrame()
+        #raw_input("hit enter")
         sampleFrame(period)
         #time.sleep(.02) #minimum working
-        time.sleep(.02)
+        time.sleep(.1)
         #queryRobot()
         '''
         samplePixel(1, 4)
@@ -145,6 +159,12 @@ def pollPixel(row, col, duration, period):
     xb_send(0, command.TACTILE, 'C' + chr(row) + chr(col) + chr(duration) + chr(period))
     time.sleep(duration + 2)
 
+def startScan():
+    xb_send(0, command.TACTILE, 'E')
+
+def stopScan():
+    xb_send(0, command.TACTILE, 'F')
+
 def getSkinSize():
     xb_send(0, command.TACTILE, 'G')
 
@@ -173,8 +193,8 @@ def handleTactilePacket(data):
     #for i in range(0,len(data)):
     #    print "data: ", ord(data[i])
     if data[0] == 'A' or data[0] == 'C':
-        print "row:", ord(data[1]), "col:", ord(data[2])
-        val = ord(data[3]) + (ord(data[4])*256)
+        print "row:", ord(data[2]), "col:", ord(data[3])
+        val = ord(data[4]) + (ord(data[5])*256)
         print "value =", val
         grid[count] = val
         count = count + 1
@@ -200,7 +220,7 @@ def handleTactilePacket(data):
         temp = np.uint8(temp)
         #print list(data)
         #print temp
-        frame = temp[1:-1:2] + (temp[2::2]*256)
+        frame = temp[2:-1:2] + (temp[3::2]*256)
         #print frame
         # this does calibration
         newframe = np.zeros(ROWS*COLS)
@@ -234,19 +254,68 @@ def handleTactilePacket(data):
         print
         '''
         
+        '''
+        -0.5  0.25   0   0.25   -0.5  0.25   0    0.25
+        0    -0.25  0.5   -0.25  0   -0.25  0.5   -0.25
+        0    -0.25  0    -0.25  0   -0.25  0   -0.25
+        0    -0.333333333333333  0    0.333333333333333   0   0.333333333333333   0   -0.333333333333333
+        0    0.0545808966861598  0.0428849902534113  0.0545808966861599  0   -0.0545808966861598 -0.0428849902534113 -0.0545808966861599
+        -0.117647058823529  0.0545808966861599  0.0428849902534113  0.0545808966861598  0.117647058823529   -0.0545808966861599 -0.0428849902534113 -0.0545808966861597
+        '''
+
+        print("    %4.f    :    :    %4.f    " % (frame[2],frame[15]))
+        print("%4.f    %4.f:    :%4.f    %4.f" % (frame[0],frame[4],frame[13],frame[9]))
+        print("    %4.f    :    :    %4.f    " % (frame[6],frame[11]))
+        print
         print("    %.2f    :    :    %.2f    " % (newframe[2],newframe[15]))
         print("%.2f    %.2f:    :%.2f    %.2f" % (newframe[0],newframe[4],newframe[13],newframe[9]))
         print("    %.2f    :    :    %.2f    " % (newframe[6],newframe[11]))
         shared.zvals = [newframe[0],newframe[2],newframe[4],newframe[6],newframe[9],newframe[11],newframe[13],newframe[15]]
+        
+        
+        dist1 = 1/((frame[0]+794.39)/7326.6)
+        dist2 = 1/((frame[2]+989.47)/8617)
+        dist3 = 1/((frame[4]+793.08)/7328.4)
+        dist4 = 1/((frame[6]+1074.3)/9582.8)
+        print
+        print("%.3f" % dist1)
+        print("%.3f" % dist2)
+        print("%.3f" % dist3)
+        print("%.3f" % dist4)
 
-        return
+        A = np.array([[8.9127,-4.4563,0,-4.4563],[0,1.5954,-3.1908,1.5954],[0,0.5,0,0.5]])
+        x = np.array([dist1,dist2,dist3,dist4])
+        np.set_printoptions(precision=3,suppress=True)
+        xyz0 = A.dot(x)
+        print xyz0
+
+        dist5 = 1/((frame[9]+945.28)/8536.8)
+        dist6 = 1/((frame[11]+1118.8)/9611.3)
+        dist7 = 1/((frame[13]+881.82)/8049)
+        dist8 = 1/((frame[15]+892.76)/8547.4)
+        print
+        print("%.3f" % dist5)
+        print("%.3f" % dist6)
+        print("%.3f" % dist7)
+        print("%.3f" % dist8)
+
+        A = np.array([[-8.9127,4.4563,0,4.4563],[0,-1.5954,3.1908,-1.5954],[0,0.5,0,0.5]]) #using same cal values as left
+        x = np.array([dist5,dist6,dist7,dist8])
+        np.set_printoptions(precision=3,suppress=True)
+        xyz1 = A.dot(x)
+        print xyz1
+
+        shared.xyzvals = [xyz0[0],xyz0[1],xyz0[2],xyz1[0],xyz1[1],xyz1[2]]
+
+        #return
         averageMax = 50.0
         if shared.enter.isSet():
             if averageCount == 0:
-                averageFrame = newframe
+                averageFrame = frame/averageMax
             elif averageCount < averageMax:
-                averageFrame = averageFrame + newframe
+                averageFrame = averageFrame + frame/averageMax
             averageCount = averageCount + 1
+            '''
             if averageCount == averageMax:
                 averageFrame = averageFrame / averageMax
                 print "#############"
@@ -265,15 +334,46 @@ def handleTactilePacket(data):
                 averageCount = 0
                 averageLines = averageLines + 1
                 shared.enter.clear()
+            '''
+            fd = open('test.csv','a')
+            fd_avg = open('test_avg.csv','a')
+            if averageLines == 0:
+                myCsvRow = "Averages,Samples per div = " + str(averageMax) + "\n"
+                fd.write(myCsvRow)
+            timenow = '%.6f' % time.time()
+            myCsvRow = str(averageLines) + "," + timenow
+            for i in range(len(frame)):
+                myCsvRow = myCsvRow + "," + str(frame[i])
+            myCsvRow = myCsvRow + "\n"
+            fd.write(myCsvRow)
+            averageLines = averageLines + 1
+            if averageCount == averageMax:
+                #averageFrame = averageFrame / averageMax
+                print "#############"
+                print averageFrame
+                print "#############"
+                myCsvRow = str(averageLines/averageMax - 1) + ",," + timenow
+                #myCsvRow = ",avg"
+                for i in range(len(averageFrame)):
+                    myCsvRow = myCsvRow + "," + str(averageFrame[i])
+                myCsvRow = myCsvRow + "\n"
+                fd_avg.write(myCsvRow)
+                #averageLines = averageLines + 1
+            fd.close()
+            fd_avg.close()
+            if averageCount == averageMax:
+                averageCount = 0
+                shared.enter.clear()
             
+        
             #print "set"
 
         #print("  %.2f  %.2f" % (newframe[3], newframe[4]))
         #print("%.2f      %.2f" % (newframe[2], newframe[5]))
         #print("  %.2f  %.2f" % (newframe[1], newframe[0]))
     elif data[0] == 'G':
-        ROWS = ord(data[1])
-        COLS = ord(data[2])
+        ROWS = ord(data[2])
+        COLS = ord(data[3])
         print "shell has", ROWS, "rows and", COLS, "columns."
         
         #calibrated values hardcoded
@@ -311,6 +411,11 @@ if __name__ == '__main__':
         #xb_safe_exit()
     except KeyboardInterrupt:
         print "\nRecieved Ctrl+C, exiting."
+        stopScan()
+        time.sleep(0.5)
+        stopScan()
+        time.sleep(0.5)
+        stopScan()
         shared.xb.halt()
         shared.ser.close()
         poller._Thread__stop()

@@ -24,6 +24,7 @@
 #define TACTILE_MODE_F           0x46
 #define TACTILE_MODE_G           0x47
 #define TACTILE_MODE_T           0x54
+#define CTS                      0x5A //'Z'
 
 
 // buffer lengths
@@ -34,7 +35,12 @@ void tactileInit();
 void checkFrameSize();
 void handleSkinRequest(unsigned char length,unsigned char *frame);
 unsigned char sendTactileCommand(unsigned char length,unsigned char *frame);
-void handleSkinData(unsigned char length, unsigned char *data);
+void handleSkinData(unsigned int length, unsigned char *data);
+void setRXFlag();
+void clearRXFlag();
+unsigned char checkRXFlag();
+void checkTactileBuffer();
+void sendCTS();
 //#ifdef	__cplusplus
 //extern "C" {
 //#endif

@@ -144,7 +144,9 @@ int main() {
         //    val[0] = val[0] + 1;
         //    val[108] = val[108] + 1;
         //}
-        
+
+        checkTactileBuffer();
+
         /*
         if(uart_tx_flag) {
             uartSendPacket(uart_tx_packet);

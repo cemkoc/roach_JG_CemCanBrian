@@ -37,6 +37,7 @@ numSamples = 0
 moveq = "NOT SET"
 
 robotQueried = False
-maxQueries = 2
+maxQueries = 10
 enter = None
 zvals = [0,0,0,0,0,0,0,0]
+xyzvals = [0,0,0,0,0,0] #x0,y0,z0,x1,y1,z1
