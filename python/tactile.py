@@ -17,8 +17,9 @@ import fcntl
 
 from hall_helpers import *
 
-import skinvisualizer
-import skinvisualizer2
+#import skinvisualizer
+#import skinvisualizer2
+import skinvisualizer3
 
 ROWS = 0
 COLS = 0
@@ -75,7 +76,7 @@ def main():
     global poller
     poller = KeyboardPoller()
     poller.start()
-    thread.start_new_thread(skinvisualizer2.main, ()) #uncomment this line to run opengl visualizer
+    thread.start_new_thread(skinvisualizer3.main, ()) #uncomment this line to run opengl visualizer
     setupSerial()
     #return
     # Send robot a WHO_AM_I command, verify communications
@@ -272,7 +273,9 @@ def handleTactilePacket(data):
         print("    %.2f    :    :    %.2f    " % (newframe[6],newframe[11]))
         shared.zvals = [newframe[0],newframe[2],newframe[4],newframe[6],newframe[9],newframe[11],newframe[13],newframe[15]]
         
+        np.set_printoptions(precision=3,suppress=True)
         
+        '''
         dist1 = 1/((frame[0]+794.39)/7326.6)
         dist2 = 1/((frame[2]+989.47)/8617)
         dist3 = 1/((frame[4]+793.08)/7328.4)
@@ -301,11 +304,65 @@ def handleTactilePacket(data):
 
         A = np.array([[-8.9127,4.4563,0,4.4563],[0,-1.5954,3.1908,-1.5954],[0,0.5,0,0.5]]) #using same cal values as left
         x = np.array([dist5,dist6,dist7,dist8])
-        np.set_printoptions(precision=3,suppress=True)
         xyz1 = A.dot(x)
         print xyz1
 
         shared.xyzvals = [xyz0[0],xyz0[1],xyz0[2],xyz1[0],xyz1[1],xyz1[2]]
+        '''
+
+        #FOR ENTIRE ARRAY AND 6-DOF
+        dist1 = 1/((frame[0]+515.18)/5876.8)
+        dist2 = 1/((frame[2]+500.3)/6171.6)
+        dist3 = 1/((frame[4]+425.45)/5967.9)
+        dist4 = 1/((frame[6]+590.64)/7028.5)
+        dist5 = 1/((frame[9]+366.96)/5398.3)
+        dist6 = 1/((frame[11]+569.35)/6501.6)
+        dist7 = 1/((frame[13]+449.9)/6144)
+        dist8 = 1/((frame[15]+448.44)/6253.5)
+        A = np.array([[8.9127,-4.4563,0,-4.4563],[0,1.5954,-3.1908,1.5954],[0,0.5,0,0.5]])
+        x = np.array([dist1,dist2,dist3,dist4])
+        xyz0 = A.dot(x)
+        print
+        #print xyz0
+        A = np.array([[-8.9127,4.4563,0,4.4563],[0,-1.5954,3.1908,-1.5954],[0,0.5,0,0.5]]) #using same cal values as left
+        x = np.array([dist5,dist6,dist7,dist8])
+        xyz1 = A.dot(x)
+        #print xyz1
+        shared.xyzvals = [xyz0[0],xyz0[1],xyz0[2],xyz1[0],xyz1[1],xyz1[2]]
+
+        '''
+        A = np.array([[-0.5,0.30357,0,0.30357,0.5,-0.30357,0,-0.30357],
+            [0,-0.19643,0.5,-0.19643,0,0.19643,-0.5,0.19643],
+            [0,-0.16667,-0.16667,-0.16667,0,-0.16667,-0.16667,-0.16667],
+            [0,-0.33333,0,0.33333,0,0.33333,0,-0.33333],
+            [0,0.071429,0,0.071429,0,-0.071429,0,-0.071429],
+            [-0.11765,0.039216,0.039216,0.039216,-0.11765,0.039216,0.039216,0.039216]
+            ])'''
+        
+        l1 = 8.5
+        l2 = 7
+        l3 = 5.5
+        l4 = 1.5
+        xscale = .1122
+        yscale = .3134
+
+        A = np.array([[xscale,0,1,0,-l1/2,l1/2*xscale], #for printed piece
+            [0,0,1,l4/2,-l2/2,0],
+            [0,-yscale,1,0,-l3/2,0],
+            [0,0,1,-l4/2,-l2/2,0],
+            [-xscale,0,1,0,l1/2,l1/2*xscale],
+            [0,0,1,-l4/2,l2/2,0],
+            [0,yscale,1,0,l3/2,0],
+            [0,0,1,l4/2,l2/2,0]])
+        A = np.linalg.pinv(A)
+
+        x = np.array([dist1,dist2,dist3,dist4,dist5,dist6,dist7,dist8])
+        xyzrpy = A.dot(x)
+        print xyzrpy
+        
+
+        shared.xyzrpy = [xyzrpy[0],xyzrpy[1],xyzrpy[2],xyzrpy[3],xyzrpy[4],xyzrpy[5]]
+
 
         #return
         averageMax = 50.0
