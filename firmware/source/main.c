@@ -79,17 +79,17 @@ int main() {
     uart_tx_packet = NULL;
     uart_tx_flag = 0;
     //uartInit(&cmdPushFunc);
-    tactileInit();
+    //tactileInit();
     
     // Need delay for encoders to be ready
     delay_ms(100);
-    //amsEncoderSetup(); //no encoders present
+    amsEncoderSetup(); //no encoders present
     mpuSetup(1);
     tiHSetup();
-    //dfmemSetup(0); //Chip has been removed from board
+    dfmemSetup(0); //Chip has been removed from board
     telemSetup();
-    //adcSetup();
-    //pidSetup();
+    adcSetup();
+    pidSetup();
 
 
 
