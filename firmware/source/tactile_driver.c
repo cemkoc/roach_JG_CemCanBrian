@@ -143,7 +143,7 @@ void handleSkinRequest(unsigned char length, unsigned char *frame) {
             sendTactileCommand(length,frame);
             break;
         case TACTILE_MODE_E: //start scan
-            rx_idx = TACTILE_MODE_E;
+            rx_idx = TACTILE_MODE_B;
             sendTactileCommand(length,frame);
             break;
         case TACTILE_MODE_F: //stop scan
@@ -204,7 +204,9 @@ void checkTactileBuffer(){
         handleSkinData(buffer_length, buffer);
         expected_length = 0;
         buffer_length = 0;
-        rx_idx = TACTILE_RX_IDLE;
+        if (rx_idx != TACTILE_MODE_B){
+            rx_idx = TACTILE_RX_IDLE;
+        }
         clearRXFlag();
         sendCTS();
     }
@@ -236,7 +238,7 @@ void __attribute__((__interrupt__, no_auto_psv)) _U2RXInterrupt(void) {
     LED_1 = ~LED_1;
     while(U2STAbits.URXDA) {
         rx_byte = U2RXREG;
-        if (0){//buffer_length == 0 && rx_byte != rx_idx) {
+        if (buffer_length == 0 && rx_byte != rx_idx) {
             Nop();  //first byte received isn't rx_idx
         } else {
             buffer[buffer_length] = rx_byte;

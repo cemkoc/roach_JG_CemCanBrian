@@ -53,10 +53,10 @@ def ReflectorUpdate():
     # +y is away from viewer perpendicular to board
     # +z is up
 
-    reflector = np.array([[-l-dy,-w+dx,0],
-        [-l-dy,w+dx,0],
-        [l-dy,w+dx,0],
-        [l-dy,-w+dx,0]])
+    reflector = np.array([[-l+dx,-w+dy,0],
+        [-l+dx,w+dy,0],
+        [l+dx,w+dy,0],
+        [l+dx,-w+dy,0]])
     Ry = np.array([[cos(yaw),-sin(yaw),0],
         [sin(yaw),cos(yaw),0],
         [0,0,1]])
@@ -64,8 +64,8 @@ def ReflectorUpdate():
         [0,1,0],
         [-sin(pitch),0,cos(pitch)]])
     Rr = np.array([[1,0,0],
-        [0,cos(roll),sin(roll)],
-        [0,-sin(roll),cos(roll)]])
+        [0,cos(roll),-sin(roll)],
+        [0,sin(roll),cos(roll)]])
     reflector = reflector.dot(Rr.T)
     reflector = reflector.dot(Rp.T)
     reflector = reflector.dot(Ry.T)
@@ -104,17 +104,17 @@ def Update():
     global pitch
     global yaw
     
-    scale = 1 #.1 cm/mm
+    scale = .1 #.1 cm/mm
     dx = shared.xyzrpy[0]*scale
     dy = shared.xyzrpy[1]*scale
-    z = shared.xyzrpy[2]*scale - 1.5
+    z = shared.xyzrpy[2]*scale #- 3.0
     roll = shared.xyzrpy[3]*scale
     pitch = shared.xyzrpy[4]*scale
     yaw = shared.xyzrpy[5]*scale
 
 #arrays for moving average
 index = 0
-count = 20
+count = 10
 dx_saved = np.zeros(count)
 dy_saved = np.zeros(count)
 z_saved = np.zeros(count)

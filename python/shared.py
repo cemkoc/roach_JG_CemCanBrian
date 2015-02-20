@@ -6,6 +6,8 @@ ser = []
 # BS_COMPORT = 'COM4'
 # BS_COMPORT = '/dev/ttyUSB0'
 BS_COMPORT = '/dev/tty.usbserial-A700eXbF'
+
+BS_COMPORT = '/dev/tty.usbserial-A400818Q'
 BS_BAUDRATE = 57600 #230400
 #XBee
 # BS_COMPORT = 'COM2'
@@ -37,7 +39,7 @@ numSamples = 0
 moveq = "NOT SET"
 
 robotQueried = False
-maxQueries = 10
+maxQueries = 100
 enter = None
 zvals = [0,0,0,0,0,0,0,0]
 xyzvals = [0,0,0,0,0,0] #x0,y0,z0,x1,y1,z1

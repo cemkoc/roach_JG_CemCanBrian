@@ -17,8 +17,8 @@ import fcntl
 
 from hall_helpers import *
 
-#import skinvisualizer
-#import skinvisualizer2
+import skinvisualizer
+import skinvisualizer2
 import skinvisualizer3
 
 ROWS = 0
@@ -264,13 +264,13 @@ def handleTactilePacket(data):
         -0.117647058823529  0.0545808966861599  0.0428849902534113  0.0545808966861598  0.117647058823529   -0.0545808966861599 -0.0428849902534113 -0.0545808966861597
         '''
 
-        print("    %4.f    :    :    %4.f    " % (frame[2],frame[15]))
-        print("%4.f    %4.f:    :%4.f    %4.f" % (frame[0],frame[4],frame[13],frame[9]))
-        print("    %4.f    :    :    %4.f    " % (frame[6],frame[11]))
+        print("    %4.f      :    :      %4.f    " % (frame[11],frame[6]))
+        print("%4.f    %4.f  :    :  %4.f    %4.f" % (frame[9],frame[13],frame[4],frame[0]))
+        print("    %4.f      :    :      %4.f    " % (frame[15],frame[2]))
         print
-        print("    %.2f    :    :    %.2f    " % (newframe[2],newframe[15]))
-        print("%.2f    %.2f:    :%.2f    %.2f" % (newframe[0],newframe[4],newframe[13],newframe[9]))
-        print("    %.2f    :    :    %.2f    " % (newframe[6],newframe[11]))
+        print("    %.2f      :    :      %.2f    " % (newframe[11],newframe[6]))
+        print("%.2f    %.2f  :    :  %.2f    %.2f" % (newframe[9],newframe[13],newframe[4],newframe[0]))
+        print("    %.2f      :    :      %.2f    " % (newframe[15],newframe[2]))
         shared.zvals = [newframe[0],newframe[2],newframe[4],newframe[6],newframe[9],newframe[11],newframe[13],newframe[15]]
         
         np.set_printoptions(precision=3,suppress=True)
@@ -311,6 +311,7 @@ def handleTactilePacket(data):
         '''
 
         #FOR ENTIRE ARRAY AND 6-DOF
+        '''
         dist1 = 1/((frame[0]+515.18)/5876.8)
         dist2 = 1/((frame[2]+500.3)/6171.6)
         dist3 = 1/((frame[4]+425.45)/5967.9)
@@ -319,6 +320,22 @@ def handleTactilePacket(data):
         dist6 = 1/((frame[11]+569.35)/6501.6)
         dist7 = 1/((frame[13]+449.9)/6144)
         dist8 = 1/((frame[15]+448.44)/6253.5)
+        '''
+
+        dist1 = 1/((frame[0]+484.95)/7060.1)
+        dist2 = 1/((frame[2]+784.9)/8969.4)
+        dist3 = 1/((frame[4]+679.17)/8065.1)
+        dist4 = 1/((frame[6]+827.24)/9738.3)
+        dist5 = 1/((frame[9]+520.02)/7788.5)
+        dist6 = 1/((frame[11]+718.4)/8619.7)
+        dist7 = 1/((frame[13]+857.91)/9203.6)
+        dist8 = 1/((frame[15]+683.95)/8855.8)
+        print
+        print("    %.3f     :    :     %.3f    " % (dist6,dist4))
+        print("%.3f    %.3f:    :%.3f    %.3f" % (dist5,dist7,dist3,dist1))
+        print("    %.3f     :    :     %.3f    " % (dist8,dist2))
+
+        #print dist1,dist2,dist3,dist4,dist5,dist6,dist7,dist8
         A = np.array([[8.9127,-4.4563,0,-4.4563],[0,1.5954,-3.1908,1.5954],[0,0.5,0,0.5]])
         x = np.array([dist1,dist2,dist3,dist4])
         xyz0 = A.dot(x)
@@ -340,25 +357,25 @@ def handleTactilePacket(data):
             ])'''
         
         l1 = 8.5
-        l2 = 7
+        l2 = 7.0
         l3 = 5.5
         l4 = 1.5
-        xscale = .1122
-        yscale = .3134
+        yscale = .1122
+        xscale = .3134
 
-        A = np.array([[xscale,0,1,0,-l1/2,l1/2*xscale], #for printed piece
-            [0,0,1,l4/2,-l2/2,0],
-            [0,-yscale,1,0,-l3/2,0],
+        A = np.array([[0,yscale,1,0,-l1/2,l1/2*yscale], #for printed piece
             [0,0,1,-l4/2,-l2/2,0],
-            [-xscale,0,1,0,l1/2,l1/2*xscale],
-            [0,0,1,-l4/2,l2/2,0],
-            [0,yscale,1,0,l3/2,0],
-            [0,0,1,l4/2,l2/2,0]])
+            [xscale,0,1,0,-l3/2,0],
+            [0,0,1,l4/2,-l2/2,0],
+            [0,-yscale,1,0,l1/2,l1/2*yscale],
+            [0,0,1,l4/2,l2/2,0],
+            [-xscale,0,1,0,l3/2,0],
+            [0,0,1,-l4/2,l2/2,0]])
         A = np.linalg.pinv(A)
 
         x = np.array([dist1,dist2,dist3,dist4,dist5,dist6,dist7,dist8])
         xyzrpy = A.dot(x)
-        print xyzrpy
+        print("x:%.3f y:%.3f z:%.3f roll:%.3f pitch:%.3f yaw:%.3f"%(xyzrpy[0],xyzrpy[1],xyzrpy[2],xyzrpy[3],xyzrpy[4],xyzrpy[5]))
         
 
         shared.xyzrpy = [xyzrpy[0],xyzrpy[1],xyzrpy[2],xyzrpy[3],xyzrpy[4],xyzrpy[5]]
