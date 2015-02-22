@@ -109,6 +109,18 @@ class Velociroach:
         print "Starting timed run of",duration," ms"
         self.tx( 0, command.START_TIMED_RUN, pack('h', duration))
         time.sleep(0.05)
+
+    def startRun(self):
+        self.clAnnounce()
+        print "Starting run of indefinite time"
+        self.tx( 0, command.PID_START_MOTORS,'')
+        time.sleep(0.05)
+
+    def stopRun(self):
+        self.clAnnounce()
+        print "Stopping run"
+        self.tx( 0, command.PID_STOP_MOTORS,'')
+        time.sleep(0.05)
         
     def findFileName(self):   
         # Construct filename
@@ -211,8 +223,12 @@ class Velociroach:
         self.VERBOSE = True
 
         print ""
+        self.pruneTelemtryData()
         self.saveTelemetryData()
         #Done with flash download and save
+
+    def pruneTelemtryData(self):
+        self.telemtryData = filter(lambda a : a != [], self.telemtryData)
 
     def saveTelemetryData(self):
         self.findFileName()

@@ -24,7 +24,7 @@ EXIT_WAIT   = False
 def main():    
     xb = setupSerial(shared.BS_COMPORT, shared.BS_BAUDRATE)
     
-    R1 = Velociroach('\x20\x52', xb)
+    R1 = Velociroach('\x30\x02', xb)
     R1.SAVE_DATA = True
                             
     #R1.RESET = False       #current roach code does not support software reset
@@ -50,10 +50,11 @@ def main():
     # Motor gains format:
     #  [ Kp , Ki , Kd , Kaw , Kff     ,  Kp , Ki , Kd , Kaw , Kff ]
     #    ----------LEFT----------        ---------_RIGHT----------
-    motorgains = [1800,0,100,0,0, 1800,0,100,0,0]
+    #motorgains = [1800,0,100,0,0, 1800,0,100,0,0]
+    motorgains = [1800,100,200,0,200, 1800,100,200,0,200]
     #motorgains = [0,0,0,0,0 , 0,0,0,0,0]
 
-    simpleAltTripod = GaitConfig(motorgains, rightFreq=5, leftFreq=5) # Parameters can be passed into object upon construction, as done here.
+    simpleAltTripod = GaitConfig(motorgains, rightFreq=1, leftFreq=1) # Parameters can be passed into object upon construction, as done here.
     simpleAltTripod.phase = PHASE_180_DEG                             # Or set individually, as here
     simpleAltTripod.deltasLeft = [0.25, 0.25, 0.25]
     simpleAltTripod.deltasRight = [0.25, 0.25, 0.25]
@@ -93,6 +94,10 @@ def main():
     ######## Motion is initiated here! ########
     R1.startTimedRun( EXPERIMENT_RUN_TIME_MS ) #Faked for now, since pullin doesn't have a working VR+AMS to test with
     time.sleep(EXPERIMENT_RUN_TIME_MS / 1000.0)  #argument to time.sleep is in SECONDS
+    #R1.startRun()
+    #raw_input("hit enter")
+    #R1.stopRun()
+
     ######## End of motion commands   ########
     
     # Sleep for a lead-out time after any motion
