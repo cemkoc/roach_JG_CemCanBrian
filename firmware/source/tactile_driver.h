@@ -33,7 +33,7 @@
 
 void tactileInit();
 void checkFrameSize();
-void handleSkinRequest(unsigned char length,unsigned char *frame);
+void handleSkinRequest(unsigned char length,unsigned char *frame,unsigned int src_addr);
 unsigned char sendTactileCommand(unsigned char length,unsigned char *frame);
 void handleSkinData(unsigned int length, unsigned char *data);
 void setRXFlag();

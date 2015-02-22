@@ -351,6 +351,6 @@ static unsigned char cmdNop(unsigned char type, unsigned char status, unsigned c
 //added for skinproc
 unsigned char cmdTactile(unsigned char type, unsigned char status, unsigned char length, unsigned char *frame, unsigned int src_addr) {
     LED_1 ^= 1;
-    handleSkinRequest(length, frame);
+    handleSkinRequest(length, frame, src_addr);
     return 1;
 }

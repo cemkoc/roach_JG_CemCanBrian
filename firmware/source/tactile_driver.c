@@ -25,7 +25,8 @@ static unsigned char buffer[LARGE_BUFFER]; //buffer for bytes received from skin
 static unsigned int max_buffer_length; //maximum length of buffer pointer
 static unsigned int buffer_length; //current length of buffer pointer
 static unsigned int expected_length; //length of current buffer
-static unsigned char rxflag;
+static unsigned char rxflag = 0;
+static unsigned int tactile_src_addr = 0;
 
 //Initialize UART module and query skinproc tactile grid size
 void tactileInit() {
@@ -62,8 +63,8 @@ void tactileInit() {
     TACTILE_ROWS = 0xFF;
     TACTILE_COLS = 0xFF;
     clearRXFlag();
-    checkFrameSize();
-    //max_buffer_length = LARGE_BUFFER;
+    //checkFrameSize();
+    max_buffer_length = LARGE_BUFFER;
 }
 
 //Query skinproc for size of frame
@@ -111,7 +112,8 @@ void checkFrameSize() {
 
 
 //Callback function when imageproc receives tactile command from radio
-void handleSkinRequest(unsigned char length, unsigned char *frame) {
+void handleSkinRequest(unsigned char length, unsigned char *frame, unsigned int src_addr) {
+    tactile_src_addr = src_addr;
     unsigned char cmd = frame[0];
     //unsigned char tempframe[TACTILE_ROWS * TACTILE_COLS * 2 + 1];
     //static unsigned char tempframe[100];
@@ -121,6 +123,8 @@ void handleSkinRequest(unsigned char length, unsigned char *frame) {
     switch (cmd) {
         case TACTILE_MODE_G: //query number of rows and columns
             rx_idx = TACTILE_MODE_G;
+            sendTactileCommand(length, frame);
+            /*
             //TACTILE_ROWS = 0x00;
             //TACTILE_COLS = 0x00;
             buffer_length = 4;
@@ -131,8 +135,7 @@ void handleSkinRequest(unsigned char length, unsigned char *frame) {
             buffer[3] = TACTILE_COLS;
             setRXFlag();
             //buffer = rowcol;
-            //buffer = tempframe;
-            //sendTactileCommand(length,frame);
+            //buffer = tempframe;*/
             break;
         case TACTILE_MODE_A: //sample individual pixel
             rx_idx = TACTILE_MODE_A;
@@ -193,7 +196,7 @@ void handleSkinData(unsigned int length, unsigned char *data){
     if (length > 114) {
         length = 114;
     }
-    radioSendData(RADIO_DST_ADDR, 0, CMD_TACTILE, length, data, 0);
+    radioSendData(tactile_src_addr, 0, CMD_TACTILE, length, data, 0);
     //data = data + length/2 - 1;
     //data[0] = rx_idx;
     //radioSendData(RADIO_DST_ADDR, 0, CMD_TACTILE, length/2 +1, data, 0);
@@ -204,6 +207,12 @@ void checkTactileBuffer(){
         handleSkinData(buffer_length, buffer);
         expected_length = 0;
         buffer_length = 0;
+        if (rx_idx == TACTILE_MODE_G){
+            TACTILE_ROWS = buffer[2];
+            TACTILE_COLS = buffer[3];
+            max_buffer_length = TACTILE_ROWS*TACTILE_COLS*2+2;
+        }
+
         if (rx_idx != TACTILE_MODE_B){
             rx_idx = TACTILE_RX_IDLE;
         }

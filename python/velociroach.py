@@ -121,7 +121,7 @@ class Velociroach:
         print "Stopping run"
         self.tx( 0, command.PID_STOP_MOTORS,'')
         time.sleep(0.05)
-        
+
     def findFileName(self):   
         # Construct filename
         path     = 'Data/'
@@ -314,6 +314,36 @@ class Velociroach:
     def zeroPosition(self):
         self.tx( 0, command.ZERO_POS, 'zero') #actual data sent in packet is not relevant
         time.sleep(0.1) #built-in holdoff, since reset apparently takes > 50ms
+
+    ############TACTILE COMMANDS added by jgoldberg############
+
+    rows = 0
+    cols = 0
+
+    def samplePixel(self, row, col): #NOT TESTED
+        self.tx(0, command.TACTILE, 'A' + chr(row) + chr(col))
+
+    def sampleFrame(self, period): #NOT TESTED
+        #period in microseconds
+        self.tx(0, command.TACTILE, 'B' + chr(period % 256) + chr(period >> 8))
+
+    def pollPixel(self, row, col, duration, period): #NOT TESTED
+        #duration in seconds
+        #period in milliseconds (must be < 256)
+        self.tx(0, command.TACTILE, 'C' + chr(row) + chr(col) + chr(duration) + chr(period))
+        time.sleep(duration + 2)
+
+    def startScan(self):
+        self.tx(0, command.TACTILE, 'E')
+
+    def stopScan(self):
+        self.tx(0, command.TACTILE, 'F')
+
+    def getSkinSize(self):
+        self.tx(0, command.TACTILE, 'G')
+
+    def testFrame(self): #NOT TESTED #need to fix C code to send correct frame length
+        self.tx(0, command.TACTILE, 'T')
         
 ########## Helper functions #################
 #TODO: find a home for these? Possibly in BaseStation class (pullin, abuchan)

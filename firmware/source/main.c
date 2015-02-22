@@ -2,20 +2,20 @@
 * Name: main.c
 * Desc: A test suite for the ImageProc 2.2 system. These tests should not be
 * considered rigorous, exhaustive tests of the hardware, but rather
-* "smoke tests" - ie. turn on the functionality and make sure the 
+* "smoke tests" - ie. turn on the functionality and make sure the
 * hardware/software doesn't start "smoking."
 *
 * The architecture is based on a function pointer queue scheduling model. The
-* meat of the testing logic resides in test.c. If the radio has received a 
+* meat of the testing logic resides in test.c. If the radio has received a
 * command packet during the previous timer interval for Timer2, the appropriate
-* function pointer is added to a queue in the interrupt service routine for 
+* function pointer is added to a queue in the interrupt service routine for
 * Timer2 (interrupts.c). The main loop simply pops the function pointer off
-* the top of the queue and executes it. 
+* the top of the queue and executes it.
 *
 * Date: 2011-04-13
 * Author: AMH, Ryan Julian
 *********************************************************************************************************/
-#include <xc.h>
+#include "p33Fxxxx.h"
 #include "init.h"
 #include "init_default.h"
 #include "timer.h"
@@ -36,14 +36,11 @@
 #include "adc_pid.h"
 #include "cmd.h"
 //#include "uart_driver.h"
+#include "tactile_driver.h" //added for skinproc
 #include "ppool.h"
 #include "carray.h"
 
 #include <stdlib.h>
-
-//added for skinproc
-#include "tactile_driver.h"
-
 
 static Payload rx_payload;
 static MacPacket rx_packet;
@@ -79,8 +76,8 @@ int main() {
     uart_tx_packet = NULL;
     uart_tx_flag = 0;
     //uartInit(&cmdPushFunc);
-    //tactileInit();
-    
+    tactileInit();
+
     // Need delay for encoders to be ready
     delay_ms(100);
     amsEncoderSetup();
@@ -94,65 +91,19 @@ int main() {
 
 
     LED_1 = 0;
-    LED_2 = 0;
-    LED_3 = 0;
-    /*delay_ms(1000);
-    LED_1 = 0;
-    LED_2 = 1;
-    LED_3 = 0;
-    delay_ms(1000);
-    LED_1 = 0;
-    LED_2 = 0;
     LED_3 = 1;
-    delay_ms(1000);
-    LED_1 = 0;
-    LED_2 = 0;
-    LED_3 = 0;
-
-    unsigned char rxChar = 0;
-    unsigned char rowcol[2];
-    rowcol[0] = 9;
-    rowcol[1] = 6;
-    unsigned char *val = malloc(109);
-    val[0] = 0x00;
-    val[108] = 0x00;*/
     while(1){
-
-        /*LED_1 = ~LED_1;
-        LED_2 = ~LED_2;
-        LED_3 = ~LED_3;
-        delay_ms(500);
-        delay_ms(500);
-        */
         // Send outgoing radio packets
-        //radioProcess();
-
-        // Send outgoing uart packets
-
-        //radioSendData(RADIO_DEST_ADDR, 5, CMD_TACTILE,2, rowcol, 0);
-        //delay_ms(500);
-
-        //test code above
-        
-        //checkTactileBuffer();
-        //radioSendData(RADIO_DEST_ADDR, 'X', CMD_TACTILE, 109, val, 0);
-        //delay_ms(10);
-        //if (val[0] == 0xFF){
-        //    val[0] = 0x00;
-        //    val[108] = 0x00;
-        //} else {
-        //    val[0] = val[0] + 1;
-        //    val[108] = val[108] + 1;
-        //}
-
-        checkTactileBuffer();
+        radioProcess();
 
         /*
+        // Send outgoing uart packets
         if(uart_tx_flag) {
             uartSendPacket(uart_tx_packet);
             uart_tx_flag = 0;
-        }
-        */
+        }*/
+
+        checkTactileBuffer();
 
         // move received packets to function queue
         while (!radioRxQueueEmpty()) {
@@ -179,8 +130,6 @@ int main() {
                ppoolReturnFullPacket(rx_packet);
             }
         }
-        //LED_1 = 0;
-    } //comment here for testing
+    }
     return 0;
-
 }

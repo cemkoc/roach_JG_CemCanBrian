@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-authors: apullin
+authors: jgoldberg and apullin
 
 This script will run an experiment with one or several Velociroach robots.
 
@@ -10,6 +10,7 @@ The main function will send all the setup parameters to the robots, execute defi
 from lib import command
 import time,sys,os,traceback
 import serial
+import thread
 
 # Path to imageproc-settings repo must be added
 sys.path.append(os.path.dirname("../../imageproc-settings/"))
@@ -17,6 +18,7 @@ sys.path.append(os.path.dirname("../imageproc-settings/"))
 import shared_multi as shared
 
 from velociroach import *
+import skinvisualizer4
 
 ####### Wait at exit? #######
 EXIT_WAIT   = False
@@ -50,11 +52,10 @@ def main():
     # Motor gains format:
     #  [ Kp , Ki , Kd , Kaw , Kff     ,  Kp , Ki , Kd , Kaw , Kff ]
     #    ----------LEFT----------        ---------_RIGHT----------
-    #motorgains = [1800,0,100,0,0, 1800,0,100,0,0]
     motorgains = [1800,100,200,0,200, 1800,100,200,0,200]
     #motorgains = [0,0,0,0,0 , 0,0,0,0,0]
 
-    simpleAltTripod = GaitConfig(motorgains, rightFreq=2, leftFreq=2) # Parameters can be passed into object upon construction, as done here.
+    simpleAltTripod = GaitConfig(motorgains, rightFreq=1, leftFreq=1) # Parameters can be passed into object upon construction, as done here.
     simpleAltTripod.phase = PHASE_180_DEG                             # Or set individually, as here
     simpleAltTripod.deltasLeft = [0.25, 0.25, 0.25]
     simpleAltTripod.deltasRight = [0.25, 0.25, 0.25]
@@ -88,23 +89,39 @@ def main():
         if r.SAVE_DATA:
             r.startTelemetrySave()
     
+    # Send tactile commands here
+    R1.getSkinSize()
+    time.sleep(.5)
+    R1.testFrame()
+    time.sleep(.5)
+    
     # Sleep for a lead-in time before any motion commands
     time.sleep(EXPERIMENT_LEADIN_TIME_MS / 1000.0)
     
     ######## Motion is initiated here! ########
     #R1.startTimedRun( EXPERIMENT_RUN_TIME_MS ) #Faked for now, since pullin doesn't have a working VR+AMS to test with
     #time.sleep(EXPERIMENT_RUN_TIME_MS / 1000.0)  #argument to time.sleep is in SECONDS
-    #R1.zeroPosition()
-    #raw_input("hit enter")
     R1.startRun()
-    raw_input("hit enter")
-    R1.stopRun()
-    #while(True):
-    #    R1.zeroPosition()
-    #    raw_input("hit enter")
-    
+    #raw_input("hit enter")
+    #R1.stopRun()
+
     ######## End of motion commands   ########
-    
+
+    raw_input("Start scan?")
+    R1.startScan()
+    time.sleep(.5)
+    thread.start_new_thread(skinvisualizer4.main, ())
+    raw_input()
+    R1.stopScan()
+    time.sleep(.1)
+    R1.stopScan()
+    time.sleep(.1)
+    R1.stopScan()
+    time.sleep(.1)
+    R1.stopRun()
+    time.sleep(.1)
+    R1.stopRun()
+
     # Sleep for a lead-out time after any motion
     time.sleep(EXPERIMENT_LEADOUT_TIME_MS / 1000.0) 
     
