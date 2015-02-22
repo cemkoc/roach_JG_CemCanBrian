@@ -71,7 +71,7 @@ int main() {
     cmdSetup();
 
     // Radio setup
-    radioInit(RADIO_RXPQ_MAX_SIZE, RADIO_TXPQ_MAX_SIZE, 0);
+    radioInit(RADIO_RXPQ_MAX_SIZE, RADIO_TXPQ_MAX_SIZE);
     radioSetChannel(RADIO_CHANNEL);
     radioSetSrcAddr(RADIO_SRC_ADDR);
     radioSetSrcPanID(RADIO_PAN_ID);
@@ -83,10 +83,10 @@ int main() {
     
     // Need delay for encoders to be ready
     delay_ms(100);
-    amsEncoderSetup(); //no encoders present
-    mpuSetup(1);
+    amsEncoderSetup();
+    mpuSetup();
     tiHSetup();
-    dfmemSetup(0); //Chip has been removed from board
+    dfmemSetup();
     telemSetup();
     adcSetup();
     pidSetup();
@@ -166,14 +166,14 @@ int main() {
         // process commands from function queue
         while(!carrayIsEmpty(fun_queue)) {
             rx_packet = carrayPopHead(fun_queue);
+            unsigned int rx_src_addr = rx_packet->src_addr.val;
             if(rx_packet != NULL) {
                rx_payload = macGetPayload(rx_packet);
                if(rx_payload != NULL) {
                    rx_function = (test_function)(rx_payload->test);
                    if(rx_function != NULL) {
                        LED_2 = ~LED_2;
-                       //LED_1 = 1;
-                       (rx_function)(payGetType(rx_payload), payGetStatus(rx_payload), payGetDataLength(rx_payload), payGetData(rx_payload));
+                       (rx_function)(payGetType(rx_payload), payGetStatus(rx_payload), payGetDataLength(rx_payload), payGetData(rx_payload), rx_src_addr);
                    }
                }
                ppoolReturnFullPacket(rx_packet);
