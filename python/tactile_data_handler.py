@@ -5,6 +5,7 @@ author: jgoldberg
 """
 import numpy as np
 import shared_multi as shared
+import time
 
 skinSize = 'G'
 fullFrame = 'B'
@@ -29,7 +30,7 @@ def handlePacket(src_addr, data):
                 maxes = np.ones(r.rows*r.cols) * 4024
 
     if packet_type == fullFrame:
-        print "received B packet", bpack
+        #print "received B packet", bpack
         bpack = bpack + 1
 
         for r in shared.ROBOTS:
@@ -51,7 +52,7 @@ def handlePacket(src_addr, data):
             elif frame[i] > maxes[i]:
                 maxes[i] = frame[i]
             newframe[i] = (frame[i] - mins[i]) / (maxes[i] - mins[i])
-
+        '''
         print("    %4.f      :    :      %4.f    " % (frame[11],frame[6]))
         print("%4.f    %4.f  :    :  %4.f    %4.f" % (frame[9],frame[13],frame[4],frame[0]))
         print("    %4.f      :    :      %4.f    " % (frame[15],frame[2]))
@@ -59,6 +60,7 @@ def handlePacket(src_addr, data):
         print("    %.2f      :    :      %.2f    " % (newframe[11],newframe[6]))
         print("%.2f    %.2f  :    :  %.2f    %.2f" % (newframe[9],newframe[13],newframe[4],newframe[0]))
         print("    %.2f      :    :      %.2f    " % (newframe[15],newframe[2]))
+        '''
         shared.zvals = [newframe[0],newframe[2],newframe[4],newframe[6],newframe[9],newframe[11],newframe[13],newframe[15]]
         
         np.set_printoptions(precision=3,suppress=True)
@@ -110,24 +112,24 @@ def handlePacket(src_addr, data):
         dist8 = 1/((frame[15]+448.44)/6253.5)
         '''
 
-        dist1 = 1/((frame[0]+484.95)/7060.1)
-        dist2 = 1/((frame[2]+784.9)/8969.4)
-        dist3 = 1/((frame[4]+679.17)/8065.1)
-        dist4 = 1/((frame[6]+827.24)/9738.3)
-        dist5 = 1/((frame[9]+520.02)/7788.5)
-        dist6 = 1/((frame[11]+718.4)/8619.7)
-        dist7 = 1/((frame[13]+857.91)/9203.6)
-        dist8 = 1/((frame[15]+683.95)/8855.8)
-        print
-        print("    %.3f     :    :     %.3f    " % (dist6,dist4))
-        print("%.3f    %.3f:    :%.3f    %.3f" % (dist5,dist7,dist3,dist1))
-        print("    %.3f     :    :     %.3f    " % (dist8,dist2))
+        dist1 = 1.0/((frame[0]+594.68)/7276.3)
+        dist2 = 1.0/((frame[2]+868.71)/9058.7)
+        dist3 = 1.0/((frame[4]+1000.2)/9529.5)
+        dist4 = 1.0/((frame[6]+941.52)/10029.0)
+        dist5 = 1.0/((frame[9]+1038.9)/9763.0)
+        dist6 = 1.0/((frame[11]+1078.5)/9985.2)
+        dist7 = 1.0/((frame[13]+774.43)/8176.5)
+        dist8 = 1.0/((frame[15]+1062.4)/10272.0)
+        #print
+        #print("    %.3f     :    :     %.3f    " % (dist6,dist4))
+        #print("%.3f    %.3f:    :%.3f    %.3f" % (dist5,dist7,dist3,dist1))
+        #print("    %.3f     :    :     %.3f    " % (dist8,dist2))
 
         #print dist1,dist2,dist3,dist4,dist5,dist6,dist7,dist8
         A = np.array([[8.9127,-4.4563,0,-4.4563],[0,1.5954,-3.1908,1.5954],[0,0.5,0,0.5]])
         x = np.array([dist1,dist2,dist3,dist4])
         xyz0 = A.dot(x)
-        print
+        #print
         #print xyz0
         A = np.array([[-8.9127,4.4563,0,4.4563],[0,-1.5954,3.1908,-1.5954],[0,0.5,0,0.5]]) #using same cal values as left
         x = np.array([dist5,dist6,dist7,dist8])
@@ -163,9 +165,24 @@ def handlePacket(src_addr, data):
 
         x = np.array([dist1,dist2,dist3,dist4,dist5,dist6,dist7,dist8])
         xyzrpy = A.dot(x)
-        print("x:%.3f y:%.3f z:%.3f roll:%.3f pitch:%.3f yaw:%.3f"%(xyzrpy[0],xyzrpy[1],xyzrpy[2],xyzrpy[3],xyzrpy[4],xyzrpy[5]))
+        #print("x:%.3f y:%.3f z:%.3f roll:%.3f pitch:%.3f yaw:%.3f"%(xyzrpy[0],xyzrpy[1],xyzrpy[2],xyzrpy[3],xyzrpy[4],xyzrpy[5]))
         
 
         shared.xyzrpy = [xyzrpy[0],xyzrpy[1],xyzrpy[2],xyzrpy[3],xyzrpy[4],xyzrpy[5]]
+
+        #record all data
+        for r in shared.ROBOTS:
+            if r.DEST_ADDR_int == src_addr and r.RECORDSHELL:
+                timenow = '%.6f' % time.time()
+                dump_data = np.array([frame[0],frame[2],frame[4],frame[6],frame[9],frame[11],frame[13],frame[15],xyzrpy[0],xyzrpy[1],xyzrpy[2],xyzrpy[3],xyzrpy[4],xyzrpy[5]])
+                myCsvRow = timenow
+                for i in range(len(dump_data)):
+                    myCsvRow = myCsvRow + "," + str(dump_data[i])
+                myCsvRow = myCsvRow + "\n"
+                print myCsvRow
+                fd = open("tactile_dump.csv","a")
+                #np.savetxt(fd , dump_data, '%f',delimiter = ',')
+                fd.write(myCsvRow)
+                fd.close()
 
 

@@ -13,14 +13,14 @@ import shared_multi as shared
 randomize = 0
 
 verticies = (
-    (3, -1, -0.1),
-    (3, 1, -0.1),
-    (-3, 1, -0.1),
-    (-3, -1, -0.1),
-    (3, -1, 0.1),
-    (3, 1, 0.1),
-    (-3, -1, 0.1),
-    (-3, 1, 0.1)
+    (5.5, -2, -0.1),
+    (5.5, 2, -0.1),
+    (-5.5, 2, -0.1),
+    (-5.5, -2, -0.1),
+    (5.5, -2, 0.1),
+    (5.5, 2, 0.1),
+    (-5.5, -2, 0.1),
+    (-5.5, 2, 0.1)
     )
 
 edges = (
@@ -50,12 +50,14 @@ surfaces = (
 
 def ReflectorUpdate():
     global reflector
-    l = 2.6
-    w = 0.85
+    global l
+    global w
+    l = 5
+    w = 1.5
     # +x is away from viewer parallel to board
     # +y is away from viewer perpendicular to board
     # +z is up
-
+    #starts closest to viewer (bottom right when looking top down on robot) and defines corners clockwise
     reflector = np.array([[-l+dx,-w+dy,0],
         [-l+dx,w+dy,0],
         [l+dx,w+dy,0],
@@ -93,11 +95,17 @@ def Randomize():
     global dx
     global dy
     global z
+    global roll
+    global pitch
+    global yaw
     scale = 1
     offset = 0.2
-    dx = random.random()
-    dy = random.random()
-    z = random.random()*scale+offset
+    dx = 0#random.random()
+    dy = 0#random.random()
+    z = .4 #random.random()*scale+offset
+    roll = 0
+    pitch = 0
+    yaw = 0
     
 def Update():
     global dx
@@ -107,10 +115,11 @@ def Update():
     global pitch
     global yaw
     
-    scale = .1 #.1 cm/mm
+    print("x:%.3f y:%.3f z:%.3f roll:%.3f pitch:%.3f yaw:%.3f"%(shared.xyzrpy[0],shared.xyzrpy[1],shared.xyzrpy[2],shared.xyzrpy[3],shared.xyzrpy[4],shared.xyzrpy[5]))
+    scale = 1 #.1 cm/mm
     dx = shared.xyzrpy[0]*scale
     dy = shared.xyzrpy[1]*scale
-    z = shared.xyzrpy[2]*scale #- 3.0
+    z = shared.xyzrpy[2]*scale - 1
     roll = shared.xyzrpy[3]*scale
     pitch = shared.xyzrpy[4]*scale
     yaw = shared.xyzrpy[5]*scale
@@ -156,6 +165,17 @@ def MovingAverage():
     pitch = np.mean(pitch_saved)
     yaw = np.mean(yaw_saved)
 
+def ForceCalc():
+    x_disp = reflector[:,0]
+    y_disp = reflector[:,1]
+    z_disp = reflector[:,2]-2.936
+    #print z_disp
+    kz = .285 #N/mm
+    Fz = sum(z_disp)*kz
+    print("Z Force (N): %.3f" % Fz)
+    x_force = ((z_disp[2]+z_disp[3])-(z_disp[0]+z_disp[1]))*100.0/2.0/((z_disp[0]+z_disp[1])+(z_disp[2]+z_disp[3]))
+    print("Location in x (cm): %.3f" % (x_force/10.0))
+
 def DrawBoard():
     glBegin(GL_QUADS)
     glColor3fv((0,1,0))
@@ -197,7 +217,7 @@ def main():
 
     gluPerspective(45, (display[0]/display[1]), 0.1, 50.0)
 
-    glTranslatef(0,0, -10)
+    glTranslatef(0,0, -15)
 
     glRotatef(60, -1, 0, 0.7)
 
@@ -233,6 +253,7 @@ def main():
             Update()
             MovingAverage()
         ReflectorUpdate()
+        ForceCalc()
         #glRotatef(1, 3, 1, 1)
         #glRotatef(1, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
@@ -242,5 +263,5 @@ def main():
         pygame.time.wait(10)
 
 if __name__ == '__main__':
-    randomize = 0
+    randomize = 1
     main()
