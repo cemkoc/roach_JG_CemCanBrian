@@ -10,6 +10,7 @@ from struct import pack,unpack
 from xbee import XBee
 from math import ceil,floor
 import numpy as np
+import scipy.io
 
 # TODO: check with firmware if this value is actually correct
 PHASE_180_DEG = 0x8000
@@ -51,7 +52,8 @@ class Velociroach:
     telemFormatString = '%d' # single type forces all data to be saved in this type
     SAVE_DATA = False
     RESET = False
-
+    RECORDSHELL = False
+    
     def __init__(self, address, xb):
             self.DEST_ADDR = address
             self.DEST_ADDR_int = unpack('>h',self.DEST_ADDR)[0] #address as integer
@@ -107,7 +109,7 @@ class Velociroach:
     def startTimedRun(self, duration):
         self.clAnnounce()
         print "Starting timed run of",duration," ms"
-        self.tx( 0, command.START_TIMED_RUN, pack('h', duration))
+        self.tx( 0, command.START_TIMED_RUN, pack('H', duration))
         time.sleep(0.05)
 
     def startRun(self):
@@ -256,7 +258,7 @@ class Velociroach:
         fileout.write('%  Motor Gains    = ' + repr(self.currentGait.motorgains) + '\n')
         fileout.write('% Columns: \n')
         # order for wiring on RF Turner
-        fileout.write('% time | Right Leg Pos | Left Leg Pos | Commanded Right Leg Pos | Commanded Left Leg Pos | DCR | DCL | GyroX | GryoY | GryoZ | AX | AY | AZ | RBEMF | LBEMF | VBatt\n')
+        fileout.write('% time | Right Leg Pos | Left Leg Pos | Commanded Right Leg Pos | Commanded Left Leg Pos | DCR | DCL | GyroX | GyroY | GyroZ | AX | AY | AZ | RBEMF | LBEMF | VBatt | S1 | S2 | S3 | S4 | S5 | S6 | S7 | S8\n')
         fileout.close()
 
     def setupTelemetryDataTime(self, runtime):
@@ -306,7 +308,7 @@ class Velociroach:
         self.setPhase(gaitConfig.phase)
         self.setMotorGains(gaitConfig.motorgains)
         self.setVelProfile(gaitConfig) #whole object is passed in, due to several references
-        self.zeroPosition()
+        #self.zeroPosition()
         
         self.clAnnounce()
         print " ------------------------------------ "
@@ -320,18 +322,18 @@ class Velociroach:
     rows = 0
     cols = 0
 
-    def samplePixel(self, row, col): #NOT TESTED
+    def samplePixel(self, row, col):
         self.tx(0, command.TACTILE, 'A' + chr(row) + chr(col))
 
-    def sampleFrame(self, period): #NOT TESTED
+    def sampleFrame(self, period):
         #period in microseconds
         self.tx(0, command.TACTILE, 'B' + chr(period % 256) + chr(period >> 8))
 
-    def pollPixel(self, row, col, duration, period): #NOT TESTED
+    def pollPixel(self, row, col, duration, period): #works if samples (1000*duration/period) is less than size of packet imageproc can send (110?)
         #duration in seconds
         #period in milliseconds (must be < 256)
         self.tx(0, command.TACTILE, 'C' + chr(row) + chr(col) + chr(duration) + chr(period))
-        time.sleep(duration + 2)
+        time.sleep(duration + 1)
 
     def startScan(self):
         self.tx(0, command.TACTILE, 'E')
@@ -339,11 +341,38 @@ class Velociroach:
     def stopScan(self):
         self.tx(0, command.TACTILE, 'F')
 
+    def skinStream(self, x):
+        # x should be 0 or 1
+        if x == 0 or x == 1:
+            self.tx(0, command.TACTILE, 'S' + chr(x))
+        else:
+            errstring = "skinStream(x) -- argument x must be either 0 or 1. received "+str(x)+"."
+            raise ValueError(errstring)
+
     def getSkinSize(self):
         self.tx(0, command.TACTILE, 'G')
 
     def testFrame(self): #NOT TESTED #need to fix C code to send correct frame length
         self.tx(0, command.TACTILE, 'T')
+
+    def loadTactileForceCal(self, send, N_file):
+        self.N = scipy.io.loadmat(N_file)['N']
+        if send:
+            for i in range(self.N.shape[0]):
+                self.tx(0, command.TACTILE, 'L' + chr(i) + pack('<6f',*self.N[i,:]))
+                time.sleep(.05)
+            self.clAnnounce()
+            print "Finished sending N calibration matrix to robot"
+
+    def sendX(self, c,d):
+        self.tx(0, command.TACTILE, 'X' + chr(c)+chr(d))
+
+    def sendY(self, c):
+        self.tx(0, command.TACTILE, 'Y' + chr(c))
+
+    def sendZ(self):
+        self.tx(0, command.TACTILE, 'Z')
+    
         
 ########## Helper functions #################
 #TODO: find a home for these? Possibly in BaseStation class (pullin, abuchan)

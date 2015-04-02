@@ -52,7 +52,7 @@ def main():
     # Motor gains format:
     #  [ Kp , Ki , Kd , Kaw , Kff     ,  Kp , Ki , Kd , Kaw , Kff ]
     #    ----------LEFT----------        ---------_RIGHT----------
-    motorgains = [1800,100,200,0,200, 1800,100,200,0,200]
+    motorgains = [1800,100,200,0,0, 1800,100,200,0,0]
     #motorgains = [0,0,0,0,0 , 0,0,0,0,0]
 
     simpleAltTripod = GaitConfig(motorgains, rightFreq=1, leftFreq=1) # Parameters can be passed into object upon construction, as done here.
@@ -65,7 +65,7 @@ def main():
     R1.setGait(simpleAltTripod)
 
     # example , 0.1s lead in + 2s run + 0.1s lead out
-    EXPERIMENT_RUN_TIME_MS     = 2000 #ms
+    EXPERIMENT_RUN_TIME_MS     = 4000 #ms
     EXPERIMENT_LEADIN_TIME_MS  = 100  #ms
     EXPERIMENT_LEADOUT_TIME_MS = 100  #ms
     
@@ -84,46 +84,115 @@ def main():
     raw_input("  Press ENTER to start run ...")
     print ""
 
+    # Send tactile commands here
+    R1.getSkinSize()
+    time.sleep(.5)
+    R1.skinStream(1)
+    #R1.testFrame()
+    time.sleep(.5)
+    #R1.startScan()
+    R1.loadTactileForceCal(True,'/Users/jgoldberg/Dropbox/Research/N_matrix_trial5.mat')
+    time.sleep(.5)
+    #raw_input("send y")
+    #R1.sendY(10)
+    #raw_input("send z")
+    #R1.sendZ()
+
+    if False:
+        print "===Begin tactile unit test==="
+
+        r = 1
+        c = 0
+
+        print
+        for i in range(30):
+            print "Sampling pixel ["+str(r)+","+str(c)+"]"
+            R1.samplePixel(r, c)
+            time.sleep(0.1)
+
+        time.sleep(1)
+        testdur = 1 #seconds
+        testper = 100 #milliseconds
+        print
+        print "Polling pixel ["+str(r)+","+str(c)+"] "+str(int(1000*testdur/testper))+" times for "+str(testdur)+"s"
+        time.sleep(1)
+        R1.pollPixel(r, c, testdur, testper)
+
+        time.sleep(1)
+        period = 500 #us
+        testper = 500 #ms
+        testdur = 3 #s
+        print
+        print "Sampling frame with period "+str(testper)+"ms for "+str(testdur)+"s"
+        time.sleep(1)
+        print int(1000.0*testdur/testper)
+        for i in range(int(1000.0*testdur/testper)):
+            print "sample"
+            R1.sampleFrame(period)
+            time.sleep(testper/1000.0)    
+
+        time.sleep(1)
+        print "===End tactile unit test==="
+        return
+
+    '''
+    R1.startScan()
+    raw_input()
+    R1.stopScan()
+    raw_input()
+    R1.stopScan()
+    raw_input()
+    '''
     # Initiate telemetry recording; the robot will begin recording immediately when cmd is received.
     for r in shared.ROBOTS:
         if r.SAVE_DATA:
             r.startTelemetrySave()
-    
-    # Send tactile commands here
-    R1.getSkinSize()
-    time.sleep(.5)
-    R1.testFrame()
-    time.sleep(.5)
-    
+
+    #r.startScan()
     # Sleep for a lead-in time before any motion commands
+    #R1.RECORDSHELL = R1.SAVE_DATA #True
     time.sleep(EXPERIMENT_LEADIN_TIME_MS / 1000.0)
-    
+    #raw_input()
     ######## Motion is initiated here! ########
-    #R1.startTimedRun( EXPERIMENT_RUN_TIME_MS ) #Faked for now, since pullin doesn't have a working VR+AMS to test with
-    #time.sleep(EXPERIMENT_RUN_TIME_MS / 1000.0)  #argument to time.sleep is in SECONDS
-    R1.startRun()
+    
+    R1.startTimedRun( EXPERIMENT_RUN_TIME_MS ) #Faked for now, since pullin doesn't have a working VR+AMS to test with
+    time.sleep(EXPERIMENT_RUN_TIME_MS / 1000.0)  #argument to time.sleep is in SECONDS
+    #R1.startRun()
     #raw_input("hit enter")
     #R1.stopRun()
 
     ######## End of motion commands   ########
 
-    raw_input("Start scan?")
-    R1.startScan()
-    time.sleep(.5)
-    thread.start_new_thread(skinvisualizer4.main, ())
-    raw_input()
-    R1.stopScan()
-    time.sleep(.1)
-    R1.stopScan()
-    time.sleep(.1)
-    R1.stopScan()
-    time.sleep(.1)
-    R1.stopRun()
-    time.sleep(.1)
-    R1.stopRun()
+    #raw_input("Start scan?")
+    #R1.VERBOSE = False
+    #R1.startScan()
+    #time.sleep(.5)
+    #thread.start_new_thread(skinvisualizer4.main, ())
+    #while raw_input("record for 5 seconds") == "y":
+    #R1.RECORDSHELL = True
+    #time.sleep(EXPERIMENT_RUN_TIME_MS)
+    #R1.RECORDSHELL = False
+    #R1.stopRun()
+    #time.sleep(.1)
+    #R1.stopRun()
+    #time.sleep(.1)
+    #raw_input()
+    #R1.stopScan()
+    #time.sleep(.1)
+    #R1.stopScan()
+    #time.sleep(.1)
+    #R1.stopScan()
 
     # Sleep for a lead-out time after any motion
     time.sleep(EXPERIMENT_LEADOUT_TIME_MS / 1000.0) 
+    #raw_input()
+    R1.stopScan()
+    time.sleep(0.1)
+    R1.stopScan()
+    time.sleep(0.1)
+    R1.stopScan()
+    time.sleep(0.1)
+    R1.RECORDSHELL = False
     
     for r in shared.ROBOTS:
         if r.SAVE_DATA:
@@ -145,6 +214,11 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         print "\nRecieved Ctrl+C, exiting."
+        R1.stopScan()
+        time.sleep(0.1)
+        R1.stopScan()
+        time.sleep(0.1)
+        R1.stopScan()
     except Exception as args:
         print "\nGeneral exception from main:\n",args,'\n'
         print "\n    ******    TRACEBACK    ******    "

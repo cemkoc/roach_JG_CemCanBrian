@@ -6,6 +6,8 @@
 #include "radio.h"
 #include "sclock.h"
 #include "timer.h"
+#include "dfmem.h"
+#include <string.h>
 
 #if defined(__TACTILE_OVER_UART)
 
@@ -21,27 +23,35 @@ static unsigned char rx_idx; //rx mode (from radio)
 static unsigned char TACTILE_ROWS; //number of rows in tactile grid
 static unsigned char TACTILE_COLS; //number of columns in tactile grid
 static int rx_count; //count received characters
-static unsigned char buffer[LARGE_BUFFER]; //buffer for bytes received from skinproc
+static unsigned char buffer[LARGE_BUFFER]; //working buffer for bytes received from skinproc
+static unsigned char fullbuffer[LARGE_BUFFER]; //full buffer for bytes received from skinproc
 static unsigned int max_buffer_length; //maximum length of buffer pointer
 static unsigned int buffer_length; //current length of buffer pointer
-static unsigned int expected_length; //length of current buffer
+static unsigned int expected_length = 2; //length of current buffer
 static unsigned char rxflag = 0;
 static unsigned int tactile_src_addr = 0;
+static unsigned int exp_len_loc = 1;
+static tactileFrame_t fullFrame;
+static tactileForces forces;
+static char streaming = 0;
+static float N[6][3*ROWS*COLS];
+static DfmemGeometryStruct mem_geo;
 
 //Initialize UART module and query skinproc tactile grid size
 void tactileInit() {
-
+    unsigned char data[2] = {0};
+    radioSendData(0x3001, 0, CMD_TACTILE, 2, data, 0);
     if (TACTILEUART){
         /// UART2 for SkinProc, 1e5 Baud, 8bit, No parity, 1 stop bit
         unsigned int U2MODEvalue, U2STAvalue, U2BRGvalue;
         U2MODEvalue = UART_EN & UART_IDLE_CON & UART_IrDA_DISABLE &
                       UART_MODE_SIMPLEX & UART_UEN_00 & UART_DIS_WAKE &
                       UART_DIS_LOOPBACK & UART_DIS_ABAUD & UART_UXRX_IDLE_ONE &
-                      UART_BRGH_SIXTEEN & UART_NO_PAR_8BIT & UART_1STOPBIT;
+                      UART_BRGH_FOUR & UART_NO_PAR_8BIT & UART_1STOPBIT;
         U2STAvalue  = UART_INT_TX & UART_INT_RX_CHAR &UART_SYNC_BREAK_DISABLED &
                       UART_TX_ENABLE & UART_ADR_DETECT_DIS &
                       UART_IrDA_POL_INV_ZERO; // If not, whole output inverted.
-        U2BRGvalue  = 21; //9; // = (4e6 / (4 * 1e5)) - 1 so the baud rate = 100000
+        U2BRGvalue  = 86;//21; //9; // = (40e6 / (4 * 1e5)) - 1 so the baud rate = 100000
         //this value matches SkinProc
 
         // =3 for 2.5M Baud
@@ -52,7 +62,8 @@ void tactileInit() {
         OpenUART2(U2MODEvalue, U2STAvalue, U2BRGvalue);
 
         ConfigIntUART2(UART_TX_INT_EN & UART_TX_INT_PR4 & UART_RX_INT_EN & UART_RX_INT_PR4);
-        EnableIntU2TX;
+        //EnableIntU2TX;
+        DisableIntU2TX;
         EnableIntU2RX;
     }
 
@@ -65,6 +76,13 @@ void tactileInit() {
     clearRXFlag();
     //checkFrameSize();
     max_buffer_length = LARGE_BUFFER;
+    
+    forces.F[0] = &forces.Fx;
+    forces.F[1] = &forces.Fy;
+    forces.F[2] = &forces.Fz;
+    forces.F[3] = &forces.Mx;
+    forces.F[4] = &forces.My;
+    forces.F[5] = &forces.Mz;
 }
 
 //Query skinproc for size of frame
@@ -75,7 +93,7 @@ void checkFrameSize() {
     unsigned char test[1];
     rx_idx = TACTILE_MODE_G;
     test[0] = rx_idx;
-    expected_length = 0;
+    expected_length = 2;
     delay_ms(500); //waiting
     delay_ms(500); //for
     delay_ms(500); //skinproc
@@ -114,15 +132,15 @@ void checkFrameSize() {
 //Callback function when imageproc receives tactile command from radio
 void handleSkinRequest(unsigned char length, unsigned char *frame, unsigned int src_addr) {
     tactile_src_addr = src_addr;
-    unsigned char cmd = frame[0];
+    rx_idx = frame[0];
     //unsigned char tempframe[TACTILE_ROWS * TACTILE_COLS * 2 + 1];
     //static unsigned char tempframe[100];
     //buffer = tempframe;
     buffer_length = 0;
-    expected_length = 0;
-    switch (cmd) {
+    expected_length = 2;
+    int i;
+    switch (rx_idx) {
         case TACTILE_MODE_G: //query number of rows and columns
-            rx_idx = TACTILE_MODE_G;
             sendTactileCommand(length, frame);
             /*
             //TACTILE_ROWS = 0x00;
@@ -138,31 +156,67 @@ void handleSkinRequest(unsigned char length, unsigned char *frame, unsigned int 
             //buffer = tempframe;*/
             break;
         case TACTILE_MODE_A: //sample individual pixel
-            rx_idx = TACTILE_MODE_A;
             sendTactileCommand(length,frame);
             break;
         case TACTILE_MODE_B: //sample frame
-            rx_idx = TACTILE_MODE_B;
+            sendTactileCommand(length,frame);
+            break;
+        case TACTILE_MODE_C: //poll pixel
             sendTactileCommand(length,frame);
             break;
         case TACTILE_MODE_E: //start scan
-            rx_idx = TACTILE_MODE_B;
             sendTactileCommand(length,frame);
             break;
         case TACTILE_MODE_F: //stop scan
             rx_idx = TACTILE_RX_IDLE;
             sendTactileCommand(length,frame);
             break;
-        case TACTILE_MODE_T:
-            rx_idx = TACTILE_MODE_T;
+        case TACTILE_MODE_S: //turn streaming on or off
+            streaming = frame[1];
+            unsigned char temp[3] = {rx_idx,1,streaming};
+            radioSendData(tactile_src_addr, 0, CMD_TACTILE, sizeof(temp), temp, 0);
+            rx_idx = TACTILE_RX_IDLE;
+            break;
+        case TACTILE_MODE_T: //test frame
             buffer_length = 0;
             expected_length = max_buffer_length;
-            
             //buffer = tempframe;
             sendTactileCommand(length,frame);
             break;
+        case TACTILE_MODE_L: //load force-torque calibration parameters
+            Nop();
+            float temp_f[6];
+            memcpy(temp_f,&frame[2],6*sizeof(float));
+            int n_ind;
+            for (n_ind = 0; n_ind < 6; n_ind++) {
+                N[n_ind][frame[1]] = temp_f[n_ind]; //frame[1] indicates index [0-ROWS*COLS*3)
+            }
+            //char* test3 = (char*)&temp_f;
+            //unsigned char temp1[6] = {rx_idx,sizeof(float),test3[0],test3[1],test3[2],test3[3]};
+            //radioSendData(tactile_src_addr, 0, CMD_TACTILE, sizeof(temp1), temp1, 0);
+            
+            
+            rx_idx = TACTILE_RX_IDLE;
+            break;
+        case 'Y': //write N to dfmem
+            dfmemGetGeometryParams(&mem_geo);
+            int N_pages = (sizeof(N)/mem_geo.bytes_per_page) + 1; //how many pages needed to hold N
+            //for (i = N_pages; i > 0; i--) {
+            //    dfmemWrite(N + mem_geo.bytes_per_page*(N_pages-i),i > 1 ? mem_geo.bytes_per_page : sizeof(N)-mem_geo.bytes_per_page*(N_pages-1) ,mem_geo.max_pages-i,0,0);
+            //}
+            dfmemWrite(N,sizeof(N),mem_geo.max_pages-1,0,0);
+            rx_idx = TACTILE_RX_IDLE;
+            break;
+        case 'Z': //read N from dfmem
+            dfmemGetGeometryParams(&mem_geo);
+            int N_pages1 = (sizeof(N)/mem_geo.bytes_per_page) + 1; //how many pages needed to hold N
+            //for (i = N_pages1; i > 0; i--) {
+            //    dfmemRead(mem_geo.max_pages-i, 0, i > 1 ? mem_geo.bytes_per_page : sizeof(N)-mem_geo.bytes_per_page*(N_pages1-1), N + mem_geo.bytes_per_page*(N_pages1-i));
+            //}
+            dfmemRead(mem_geo.max_pages-1, 0, sizeof(N), N);
+            rx_idx = TACTILE_RX_IDLE;
+            break;
         default:
-            rx_idx = cmd;
             sendTactileCommand(length,frame);
             break;
     }
@@ -204,21 +258,66 @@ void handleSkinData(unsigned int length, unsigned char *data){
 
 void checkTactileBuffer(){
     if (checkRXFlag()) {
-        handleSkinData(buffer_length, buffer);
-        expected_length = 0;
+
+        if (streaming || rx_idx != TACTILE_MODE_E) {
+            handleSkinData(buffer_length, fullbuffer);
+        }
+
+        if (rx_idx == TACTILE_MODE_B || rx_idx == TACTILE_MODE_E) {
+            int i = 0;
+            for (i = 0; i < fullbuffer[1]-4; i++) {
+                fullFrame.frame[i] = ((unsigned int)(fullbuffer[i*2+2])) + (((unsigned int)(fullbuffer[i*2+3]))<<8);
+            }
+            calcForces(&fullFrame, &forces);
+
+            if (0) {
+                //send back force data here
+                unsigned char forcedata[2+6*sizeof(float)];
+                forcedata[0] = 'F';
+                forcedata[1] = 6*sizeof(float);
+
+                for (i=0; i < 6; i++) {
+                    memcpy(&forcedata[2+i*sizeof(float)],forces.F[i],sizeof(float));
+                }
+                handleSkinData(sizeof(forcedata), forcedata);
+            }
+        }
+
+        expected_length = 2;
         buffer_length = 0;
         if (rx_idx == TACTILE_MODE_G){
-            TACTILE_ROWS = buffer[2];
-            TACTILE_COLS = buffer[3];
+            TACTILE_ROWS = fullbuffer[2];
+            TACTILE_COLS = fullbuffer[3];
             max_buffer_length = TACTILE_ROWS*TACTILE_COLS*2+2;
         }
 
-        if (rx_idx != TACTILE_MODE_B){
+        if (rx_idx != TACTILE_MODE_E){
             rx_idx = TACTILE_RX_IDLE;
         }
         clearRXFlag();
         sendCTS();
     }
+}
+
+void calcForces(tactileFrame_t* sensor, tactileForces* forces){
+
+    Nop();
+    int i,j;
+    float A[3*ROWS*COLS];
+
+    for (i = 0; i < ROWS*COLS; i++) {
+        A[i*3] = (float) sensor->frame[i];
+        A[i*3+1] = A[i*3]*A[i*3];
+        A[i*3+2] = A[i*3+1]*A[i*3];
+    }
+    
+    for (j = 0; j < 6; j++) {
+        *forces->F[j] = 0;
+        for (i = 0; i < 3*ROWS*COLS; i++) {
+            *forces->F[j] += A[i]*N[j][i];
+        }
+    }
+    Nop();
 }
 
 void setRXFlag(){
@@ -239,6 +338,15 @@ void sendCTS(){
     sendTactileCommand(1,frame);
 }
 
+int tactileReturnFrame(tactileFrame_t* dst){
+    if (dst != NULL) {
+        memcpy(dst->frame, fullFrame.frame, ROWS*COLS*sizeof(unsigned int));
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
 //read data from the UART, and fill each byte into the buffer
 void __attribute__((__interrupt__, no_auto_psv)) _U2RXInterrupt(void) {
     unsigned char rx_byte;
@@ -251,18 +359,21 @@ void __attribute__((__interrupt__, no_auto_psv)) _U2RXInterrupt(void) {
             Nop();  //first byte received isn't rx_idx
         } else {
             buffer[buffer_length] = rx_byte;
-            if (buffer_length == 1) {
-                Nop();
-                Nop();
-                expected_length = ((unsigned int) rx_byte) + 2;
+            if (buffer_length == exp_len_loc) {
+                if (rx_byte == 0xFF) {
+                    exp_len_loc += 1;
+                }
+                expected_length += (unsigned int) rx_byte;
             }
             ++buffer_length;
         }
 
 
     }
-    if (expected_length != 0 && buffer_length >= expected_length) { //captured a full packet
+    if (buffer_length >= expected_length) { //captured a full packet
+        memcpy(fullbuffer, buffer, expected_length);
         setRXFlag();
+        exp_len_loc = 1;
     }
 
     if(U2STAbits.OERR) {

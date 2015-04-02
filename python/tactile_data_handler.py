@@ -6,9 +6,14 @@ author: jgoldberg
 import numpy as np
 import shared_multi as shared
 import time
+from struct import pack,unpack
 
-skinSize = 'G'
+singlepixel = 'A'
 fullFrame = 'B'
+pollpixel = 'C'
+streamFrame = 'E'
+skinSize = 'G'
+streaming = 'S'
 
 bpack = 0
 
@@ -18,7 +23,11 @@ def handlePacket(src_addr, data):
     global maxes
 
     packet_type = data[0]
-    payload_length = data[1]
+    payload_length = ord(data[1])
+
+    if packet_type == singlepixel:
+        temp = map(ord,data)
+        print "For pixel ["+str(temp[2])+","+str(temp[3])+"] value = "+str(temp[4]+temp[5]*256)
 
     if packet_type == skinSize:
         for r in shared.ROBOTS:
@@ -29,7 +38,30 @@ def handlePacket(src_addr, data):
                 mins = np.ones(r.rows*r.cols) * 200
                 maxes = np.ones(r.rows*r.cols) * 4024
 
-    if packet_type == fullFrame:
+    if packet_type == pollpixel:
+        temp = map(ord,data)
+        print "Pixel ["+str(temp[2])+","+str(temp[3])+"]:"
+        for i in range((payload_length-2)/2):
+            print str(i)+"\t"+str(temp[i*2+4]+temp[i*2+5]*256)
+
+    if packet_type == 'F':
+        forces = unpack('<6f', pack('24c',*data[2:]))
+        print "\nforces:",forces
+
+    if packet_type == 'L':
+        f = unpack('<f', data[2]+data[3]+data[4]+data[5])[0]
+        for r in shared.ROBOTS:
+            if r.DEST_ADDR_int == src_addr:
+                print "sent",r.f,"rec",f
+                print "delta =",r.f-f
+
+    if packet_type == streaming:
+        if ord(data[2]):
+            print "SkinProc streaming has been turned ON"
+        else:
+            print "SkinProc streaming has been turned OFF"
+
+    if packet_type == fullFrame or packet_type == streamFrame:
         #print "received B packet", bpack
         bpack = bpack + 1
 
@@ -40,9 +72,29 @@ def handlePacket(src_addr, data):
                     return
                 ROWS = r.rows
                 COLS = r.cols
+                N = r.N
         temp = map(ord, data)
         temp = np.uint8(temp)
+        timeStamp = temp[-4]+temp[-3]*256+temp[-2]*256*256+temp[-1]*256*256*256
+        print "time =",timeStamp/1000000.0,"frequency =",(1000000.0/(timeStamp-shared.prevStamp))
+        shared.prevStamp = timeStamp
+        temp = temp[:-4]
         frame = temp[2:-1:2] + (temp[3::2]*256)
+
+        print frame
+
+        A = np.array([frame[0],np.power(frame[0],2),np.power(frame[0],3),
+            frame[1],np.power(frame[1],2),np.power(frame[1],3),
+            frame[2],np.power(frame[2],2),np.power(frame[2],3),
+            frame[3],np.power(frame[3],2),np.power(frame[3],3),
+            frame[4],np.power(frame[4],2),np.power(frame[4],3),
+            frame[5],np.power(frame[5],2),np.power(frame[5],3),
+            frame[6],np.power(frame[6],2),np.power(frame[6],3),
+            frame[7],np.power(frame[7],2),np.power(frame[7],3)])
+        F = A.dot(N)
+        print("Fx:%.4f Fy:%.4f Fz:%.4f Froll:%.4f Fpitch:%.4f Fyaw:%.4f"%(F[0],F[1],F[2],F[3],F[4],F[5]))
+
+        return
 
         # normalization
         newframe = np.zeros(ROWS*COLS)
@@ -52,7 +104,7 @@ def handlePacket(src_addr, data):
             elif frame[i] > maxes[i]:
                 maxes[i] = frame[i]
             newframe[i] = (frame[i] - mins[i]) / (maxes[i] - mins[i])
-        '''
+        
         print("    %4.f      :    :      %4.f    " % (frame[11],frame[6]))
         print("%4.f    %4.f  :    :  %4.f    %4.f" % (frame[9],frame[13],frame[4],frame[0]))
         print("    %4.f      :    :      %4.f    " % (frame[15],frame[2]))
@@ -60,7 +112,7 @@ def handlePacket(src_addr, data):
         print("    %.2f      :    :      %.2f    " % (newframe[11],newframe[6]))
         print("%.2f    %.2f  :    :  %.2f    %.2f" % (newframe[9],newframe[13],newframe[4],newframe[0]))
         print("    %.2f      :    :      %.2f    " % (newframe[15],newframe[2]))
-        '''
+        
         shared.zvals = [newframe[0],newframe[2],newframe[4],newframe[6],newframe[9],newframe[11],newframe[13],newframe[15]]
         
         np.set_printoptions(precision=3,suppress=True)
@@ -175,11 +227,12 @@ def handlePacket(src_addr, data):
             if r.DEST_ADDR_int == src_addr and r.RECORDSHELL:
                 timenow = '%.6f' % time.time()
                 dump_data = np.array([frame[0],frame[2],frame[4],frame[6],frame[9],frame[11],frame[13],frame[15],xyzrpy[0],xyzrpy[1],xyzrpy[2],xyzrpy[3],xyzrpy[4],xyzrpy[5]])
-                myCsvRow = timenow
+                #myCsvRow = timenow
+                myCsvRow = str(timeStamp)
                 for i in range(len(dump_data)):
                     myCsvRow = myCsvRow + "," + str(dump_data[i])
                 myCsvRow = myCsvRow + "\n"
-                print myCsvRow
+                #print myCsvRow
                 fd = open("tactile_dump.csv","a")
                 #np.savetxt(fd , dump_data, '%f',delimiter = ',')
                 fd.write(myCsvRow)

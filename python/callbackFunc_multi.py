@@ -23,7 +23,7 @@ pktFormat = { \
     command.SET_STEERING_GAINS:     '6h', \
     command.SOFTWARE_RESET:         '', \
     command.ERASE_SECTORS:          'L', \
-    command.FLASH_READBACK:         '=LL' +'4l'+'11h', \
+    command.FLASH_READBACK:         '=LL' +'4l'+'11h'+'8H', \
     command.SLEEP:                  'b', \
     command.ECHO:                   'c' ,\
     command.SET_VEL_PROFILE:        '8h' ,\
@@ -146,8 +146,9 @@ def xbee_received(packet):
         #added for skinproc
         # TACTILE
         elif (type == command.TACTILE):
-            print "Received tactile mode:", data[0]
-            #print map(ord, data)
+            #print "Received tactile mode:", data[0]
+            print map(ord, data)
+            #print
             tactile.handlePacket(src_addr, data)
 
     except KeyboardInterrupt:

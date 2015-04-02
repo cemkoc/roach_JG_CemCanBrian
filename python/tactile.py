@@ -11,6 +11,7 @@ import serial
 import shared
 import numpy as np
 import thread
+import scipy.io #for .mat reading
   
 import termios
 import fcntl
@@ -75,8 +76,8 @@ def myGetch():
 def main():
     global poller
     poller = KeyboardPoller()
-    poller.start()
-    thread.start_new_thread(skinvisualizer3.main, ()) #uncomment this line to run opengl visualizer
+    #poller.start()
+    #thread.start_new_thread(skinvisualizer3.main, ()) #uncomment this line to run opengl visualizer
     setupSerial()
     #return
     # Send robot a WHO_AM_I command, verify communications
@@ -89,7 +90,12 @@ def main():
     col = 0
     dur = 15
     period = 500
-    
+    while True:
+        temp = raw_input("enter pixel to sample (rc):")
+        r = int(temp[0])
+        c = int(temp[1])
+        samplePixel(r, c)
+    return
     startScan();
     time.sleep(1)
     return
@@ -207,7 +213,7 @@ def handleTactilePacket(data):
             print grid[2], grid[1]
             print grid[3], grid[0]
         
-    elif data[0] == 'B':
+    elif data[0] == 'B' or data[0] == 'E':
         print "received B packet", bpack
         bpack = bpack + 1
         #bpack = bpack + 1
@@ -322,14 +328,14 @@ def handleTactilePacket(data):
         dist8 = 1/((frame[15]+448.44)/6253.5)
         '''
 
-        dist1 = 1/((frame[0]+484.95)/7060.1)
-        dist2 = 1/((frame[2]+784.9)/8969.4)
-        dist3 = 1/((frame[4]+679.17)/8065.1)
-        dist4 = 1/((frame[6]+827.24)/9738.3)
-        dist5 = 1/((frame[9]+520.02)/7788.5)
-        dist6 = 1/((frame[11]+718.4)/8619.7)
-        dist7 = 1/((frame[13]+857.91)/9203.6)
-        dist8 = 1/((frame[15]+683.95)/8855.8)
+        dist1 = 1.0/((frame[0]+594.68)/7276.3)
+        dist2 = 1.0/((frame[2]+868.71)/9058.7)
+        dist3 = 1.0/((frame[4]+1000.2)/9529.5)
+        dist4 = 1.0/((frame[6]+941.52)/10029.0)
+        dist5 = 1.0/((frame[9]+1038.9)/9763.0)
+        dist6 = 1.0/((frame[11]+1078.5)/9985.2)
+        dist7 = 1.0/((frame[13]+774.43)/8176.5)
+        dist8 = 1.0/((frame[15]+1062.4)/10272.0)
         print
         print("    %.3f     :    :     %.3f    " % (dist6,dist4))
         print("%.3f    %.3f:    :%.3f    %.3f" % (dist5,dist7,dist3,dist1))
@@ -380,6 +386,17 @@ def handleTactilePacket(data):
 
         shared.xyzrpy = [xyzrpy[0],xyzrpy[1],xyzrpy[2],xyzrpy[3],xyzrpy[4],xyzrpy[5]]
 
+        N = scipy.io.loadmat('/Users/jgoldberg/Dropbox/Research/N_matrix_trial5.mat')['N']
+        A = np.array([frame[0],np.power(frame[0],2),np.power(frame[0],3),
+            frame[2],np.power(frame[2],2),np.power(frame[2],3),
+            frame[4],np.power(frame[4],2),np.power(frame[4],3),
+            frame[6],np.power(frame[6],2),np.power(frame[6],3),
+            frame[9],np.power(frame[9],2),np.power(frame[9],3),
+            frame[11],np.power(frame[11],2),np.power(frame[11],3),
+            frame[13],np.power(frame[13],2),np.power(frame[13],3),
+            frame[15],np.power(frame[15],2),np.power(frame[15],3)])
+        F = A.dot(N)
+        print("Fx:%.4f Fy:%.4f Fz:%.4f Froll:%.4f Fpitch:%.4f Fyaw:%.4f"%(F[0],F[1],F[2],F[3],F[4],F[5]))
 
         #return
         averageMax = 50.0

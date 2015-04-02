@@ -7,6 +7,8 @@
 
 #include "uart.h"
 #include <stdio.h>
+#include "settings.h"
+#include <stdint.h>
 
 #ifndef UART_H
 #define	UART_H
@@ -23,6 +25,8 @@
 #define TACTILE_MODE_E           0x45
 #define TACTILE_MODE_F           0x46
 #define TACTILE_MODE_G           0x47
+#define TACTILE_MODE_L           0x4C
+#define TACTILE_MODE_S           0x53
 #define TACTILE_MODE_T           0x54
 #define CTS                      0x5A //'Z'
 
@@ -30,6 +34,20 @@
 // buffer lengths
 #define SMALL_BUFFER            3
 #define LARGE_BUFFER            110
+
+typedef struct {
+    uint16_t frame[ROWS*COLS];
+} tactileFrame_t;
+
+typedef struct {
+    float Fx;
+    float Fy;
+    float Fz;
+    float Mx;
+    float My;
+    float Mz;
+    float *F[6];
+} tactileForces;
 
 void tactileInit();
 void checkFrameSize();
@@ -41,6 +59,10 @@ void clearRXFlag();
 unsigned char checkRXFlag();
 void checkTactileBuffer();
 void sendCTS();
+int tactileReturnFrame(tactileFrame_t* dst);
+void calcForces(tactileFrame_t* frame, tactileForces* F);
+
+
 //#ifdef	__cplusplus
 //extern "C" {
 //#endif
