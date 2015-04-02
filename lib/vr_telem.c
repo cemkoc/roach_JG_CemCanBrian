@@ -13,6 +13,7 @@
 #include "adc_pid.h"
 #include "tih.h"
 #include "pid-ip2.5.h"
+#include "tactile_driver.h"
 
 // TODO (apullin) : Remove externs by adding getters to other modules
 //extern pidObj motor_pidObjs[NUM_MOTOR_PIDS];
@@ -54,6 +55,10 @@ void vrTelemGetData(vrTelemStruct_t* ptr) {
 
     //Battery
     ptr->Vbatt = (int) adcGetVbatt();
+
+
+    //SkinProc
+    tactileReturnFrame(&(ptr->tactileData));
 }
 
 //This may be unneccesary, since the telemtry type isn't totally anonymous

@@ -1,6 +1,7 @@
 //vr_telem.h , VelociRoACH specific telemetry packet format header
 
 #include <stdint.h>
+#include "tactile_driver.h"
 
 // Data structure type
 
@@ -20,6 +21,7 @@ typedef struct {
     int16_t bemfL;
     int16_t bemfR;
     int16_t Vbatt; // battery voltage
+    tactileFrame_t tactileData; //skinproc data frame
 } vrTelemStruct_t;
 
 //void vrTelemGetData(unsigned char* ptr);
