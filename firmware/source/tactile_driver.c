@@ -368,7 +368,7 @@ void sendCTS(){
     sendTactileCommand(1,frame);
 }
 
-int tactileReturnFrame(tactileFrame_t* dst){
+int tactileReturnFrame(tactileFrame_t *dst){
     if (dst != NULL) {
         memcpy(dst->frame, fullFrame.frame, ROWS*COLS*sizeof(unsigned int));
         return 0;

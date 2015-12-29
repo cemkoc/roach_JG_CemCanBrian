@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include "tactile_driver.h"
 
-// Data structure type
+// Data structure typeS
+
 
 typedef struct {
     int32_t posL; // Hall angle position
@@ -21,10 +22,11 @@ typedef struct {
     int16_t bemfL;
     int16_t bemfR;
     int16_t Vbatt; // battery voltage
-    tactileFrame_t tactileData; //skinproc data frame
+    unsigned int tactileData[ROWS*COLS];
+   // tactileFrame_t tactileData; //skinproc data frame
 } vrTelemStruct_t;
 
 //void vrTelemGetData(unsigned char* ptr);
-void vrTelemGetData(vrTelemStruct_t* ptr);
+void vrTelemGetData(vrTelemStruct_t *ptr);
 
 unsigned int vrTelemGetSize();

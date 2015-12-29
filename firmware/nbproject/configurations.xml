@@ -67,7 +67,6 @@
         <itemPath>../../imageproc-lib/sclock.c</itemPath>
         <itemPath>../../imageproc-lib/spi_controller.c</itemPath>
         <itemPath>../../imageproc-lib/tih.c</itemPath>
-        <itemPath>../../imageproc-lib/uart_driver.c</itemPath>
         <itemPath>../../imageproc-lib/adc_pid.c</itemPath>
         <itemPath>../../imageproc-lib/i2c_driver.c</itemPath>
         <itemPath>../../imageproc-lib/init_default.c</itemPath>
@@ -106,10 +105,10 @@
         <targetDevice>dsPIC33FJ128MC706A</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>PICkit3PlatformTool</platformTool>
+        <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
         <languageToolchainVersion>1.24</languageToolchainVersion>
-        <platform>4</platform>
+        <platform>3</platform>
       </toolsSet>
       <compileType>
         <linkerTool>
