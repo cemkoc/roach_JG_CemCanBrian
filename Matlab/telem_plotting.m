@@ -1,12 +1,17 @@
+clear % clear all variables between plots
 figure(1)
-%clf
+clf
+%data_file ='./2-28-15_data/behavior4_2Hz.txt'
+%data_file ='../python/Data/2015.12.30_16.09.44_trial_imudata.txt';
+data_file ='../python/Data/2015.12.26_19.00.08_trial_imudata.txt';
 data = csvread('./2-28-15_data/behavior4_2Hz.txt',9,0);
+%data = csvread(data_file,9,0);
 legScale = 95.8738e-6; % 16 bit to radian
 vref = 3.3; % for voltage conversion
 vdivide = 3.7/2.7;  % for battery scaling
 vgain = 15.0/47.0;  % gain of differential amplifier
 RMotor = 3.3;   % resistance for SS7-3.3 ** need to check **
-Kt = 1.41; %  motor toriqe constant mN-m/A  ** SS7-3.3 **
+Kt = 1.41; %  motor torque constant mN-m/A  ** SS7-3.3 **
 
 %acelerometer scale in mpu6000.c set to +- 8g
 % +- 32768 data
@@ -98,9 +103,10 @@ set(0,'DefaultTextFontSize', 18)
 
 %M = csvread('/Users/jgoldberg/Dropbox/Research/2-28-15_data/behavior4_2Hz.csv');
 M = csvread('./2-28-15_data/behavior4_2Hz.csv');
+%M = csvread(data_file,9,0);  % should be procesed csv file?
 load('N_matrix_trial5.mat');
 time_sens = M(:,1);
-rate = size(time_sens,1)/(time_sens(end)-time_sens(1));
+rate = 1.0 * size(time_sens,1)/(time_sens(end)-time_sens(1));  % samples per microsecond
 index = 1:size(M,1);
 
 % moving average filter
@@ -122,15 +128,22 @@ A = [S(:,1),S(:,1).^2,S(:,1).^3,S(:,2),S(:,2).^2,S(:,2).^3,S(:,3),S(:,3).^2,S(:,
 F = A * N;
 
 s = 4;
-
+% maxt = ceil(index_avg(end)/rate)
+maxt = 10;
 ha = tight_subplot(5,1,[.02 0],[.1 .08],[.1 .01]);
-axes(ha(1)); plot(index_avg./rate,F(:,1)-mean(F(50:100,1)),'k','LineWidth',3);ylabel('Fx (N)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,10,-0.8,.2]);
+axes(ha(1)); plot(index_avg./rate,F(:,1)-mean(F(50:100,1)),...
+    'k','LineWidth',3);ylabel('Fx (N)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,maxt,-0.8,.2]);
 %title('Force and leg torque','FontSize', 24, 'FontName', 'CMU Serif');
-axes(ha(2)); plot(index_avg./rate,F(:,2)-mean(F(50:100,2)),'k','LineWidth',3);ylabel('Fy (N)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,10,-.3,.5]);
-axes(ha(3)); plot(index_avg./rate,F(:,3)-mean(F(50:100,3)),'k','LineWidth',3);ylabel('Fz (N)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,10,-.7,.3]);
-axes(ha(4)); plot(time(1:s:end)/1000,TorqueR(1:s:end),'r-','LineWidth',3);%ylabel('T_R (mN-m)','FontSize', 18, 'FontName', 'CMU Serif');%axis([0,10,-2,4]);
-hold on; plot(time(1:s:end)/1000,-TorqueL(1:s:end),'b:','LineWidth',3);ylabel('\tau (mN-m)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,10,-2.1,2.1]); legend('Right leg','Left leg')
-axes(ha(5)); plot(time(1:s:end)/1000,AngleZ(1:s:end),'k','LineWidth',3);ylabel('\theta_Z (radians)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,10,-.8,.3]);% legend('Right leg','Left leg')
+axes(ha(2)); plot(index_avg./rate,F(:,2)-mean(F(50:100,2)),...
+    'k','LineWidth',3);ylabel('Fy (N)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,maxt,-.3,.5]);
+axes(ha(3)); plot(index_avg./rate,F(:,3)-mean(F(50:100,3)),...
+    'k','LineWidth',3);ylabel('Fz (N)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,maxt,-.7,.3]);
+axes(ha(4)); plot(time(1:s:end)/1000,TorqueR(1:s:end),...
+    'r-','LineWidth',3);%ylabel('T_R (mN-m)','FontSize', 18, 'FontName', 'CMU Serif');%axis([0,10,-2,4]);
+hold on; plot(time(1:s:end)/1000,-TorqueL(1:s:end),...
+    'b:','LineWidth',3);ylabel('\tau (mN-m)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,maxt,-2.1,2.1]); legend('Right leg','Left leg')
+axes(ha(5)); plot(time(1:s:end)/1000,AngleZ(1:s:end),...
+    'k','LineWidth',3);ylabel('\theta_Z (radians)','FontSize', 18, 'FontName', 'CMU Serif');axis([0,maxt,-.8,.3]);% legend('Right leg','Left leg')
 
 set(ha(1:4),'XTickLabel',''); %set(ha,'YTickLabel','')
 for i = 1:5
@@ -154,7 +167,7 @@ set(gcf,'Position',[1 1 14 16]);
 %%
 % plot force data vs accelerometer- good for gravity static calibration
 figure(2)
-%clf
+clf
 
 % Change default text fonts.
 set(0,'DefaultTextFontname', 'CMU Serif')

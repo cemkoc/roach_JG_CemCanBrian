@@ -1,13 +1,13 @@
 close all
 clear all
 
-cd '../telemetry/all data';
+%cd '../telemetry/all data';
 %D:\Dropbox\Work\Grass\working\robot\shell force\5-11-15_data_with_chen\data\';
 
 %load('D:\Dropbox\Work\Grass\working\robot\shell force\5-11-15_data_with_chen\N_matrix_trial9.mat')
-load('../N_matrix_trial9.mat')
+load('../telemetry/N_matrix_trial9.mat')
 % T = csvread('velociroach_s=3cm_w=3cm_h=10cm_layer=5_f=10Hz_beetleshell_run3.txt',9,0);
-T = csvread('velociroach_s=10cm_w=5.5cm_h=27cm_layer=3_ply=6_f=13Hz_beetleshell_run3.txt',9,0);
+T = csvread('../telemetry/alldata/velociroach_s=10cm_w=5.5cm_h=27cm_layer=3_ply=6_f=13Hz_beetleshell_run3.txt',9,0);
 
 S = T(:,17:24);
 A = [S(:,1),S(:,1).^2,S(:,1).^3,S(:,2),S(:,2).^2,S(:,2).^3,S(:,3),S(:,3).^2,S(:,3).^3,S(:,4),S(:,4).^2,S(:,4).^3,S(:,5),S(:,5).^2,S(:,5).^3,S(:,6),S(:,6).^2,S(:,6).^3,S(:,7),S(:,7).^2,S(:,7).^3,S(:,8),S(:,8).^2,S(:,8).^3];
