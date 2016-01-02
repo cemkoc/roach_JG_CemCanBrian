@@ -47,10 +47,14 @@ Wn = 20/1000;
 N = 4; % filter order
 [B,A]=butter(N,Wn);
 Frecov1=filter(B,A,Frecov1);
-
+% filter accelerometer as well
+AX=filter(B,A,AX);
+AY=filter(B,A,AY);
+AZ=filter(B,A,AZ);
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 figure(1);
+clf;
 set(gcf,'color','w');
 set(gcf,'Units','inches');
 set(gcf,'Position',[1 1 8 4]);
@@ -79,41 +83,48 @@ xlabel('Time (s)','fontsize',ftsz);
 xlim([0 maxt]);
 ylim([-20 20]);
 
-%%
-% figure(1);
-% set(gcf,'color','w');
-% subplot(3,1,1)
-% plot(T(:,1),Frecov1(:,1))
-% line([0 12.3],[0 0],'color','k');
-% ylabel('F_x (N)')
-% subplot(3,1,2)
-% plot(T(:,1),Frecov1(:,2))
-% ylabel('F_y (N)')
-% subplot(3,1,3)
-% plot(T(:,1),Frecov1(:,3))
-% ylabel('F_z (N)')
-% xlabel('time (s)');
-% set(gcf,'Units','inches');
-% set(gcf,'Position',[1 1 14 8]);
-% 
-% figure(2);
-% set(gcf,'color','w');
-% subplot(3,1,1)
-% plot(T(:,1),Frecov1(:,4))
-% ylabel('M_x (mN*m)')
-% subplot(3,1,2)
-% plot(T(:,1),Frecov1(:,5))
-% ylabel('M_y (mN*m)')
-% subplot(3,1,3)
-% plot(T(:,1),Frecov1(:,6))
-% ylabel('M_z (mN*m)')
-% xlabel('time (s)');
-% set(gcf,'Units','inches');
-% set(gcf,'Position',[1 1 14 8]);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot of robot state and force sensor
+figure(2)
+clf;
+ha = tight_subplot(7,1,[.02 0],[.1 .08],[.1 .01]);
+axes(ha(1)); plot(time(1:s:end)/1000,TorqueR(1:s:end),...
+    'r-','LineWidth',2);
+hold on; plot(time(1:s:end)/1000,-TorqueL(1:s:end),...
+    'b:','LineWidth',2);ylabel('\tau (mN-m)','FontSize', 14, 'FontName', 'CMU Serif');axis([0,maxt,-2.1,2.1]); legend('Right leg','Left leg')
+axes(ha(2)); plot(time(1:s:end)/1000,AngleZ(1:s:end),...
+    'k','LineWidth',3);ylabel('\theta_Z (radians)','FontSize', 14, 'FontName', 'CMU Serif');
+    axis([0,maxt,-.8,10]);% gyro Z angle
+axes(ha(3)); plot(time(1:s:end)/1000,AX(1:s:end),'k','LineWidth',2);
+    ylabel('x" (m/s^2)','FontSize', 14, 'FontName', 'CMU Serif');axis([0,maxt,-15,15]);
+axes(ha(4)); plot(time(1:s:end)/1000,AY(1:s:end),'k','LineWidth',2);
+    ylabel('y" (m/s^2)','FontSize', 14, 'FontName', 'CMU Serif');axis([0,maxt,-15,15]);
+axes(ha(5)); plot(time(1:s:end)/1000,AZ(1:s:end),'k','LineWidth',2);
+    ylabel('z" (m/s^2)','FontSize', 14, 'FontName', 'CMU Serif');axis([-0,maxt,-5,25]);
+%%%%% now plot contact forces and torques %%%%%%%%%%
+axes(ha(6)); plot(time(1:s:end)/1000,Frecov1(1:s:end,1),'r','LineWidth',2);  
+hold on; plot(time(1:s:end)/1000,Frecov1(1:s:end,2),'b','LineWidth',2); 
+    plot(time(1:s:end)/1000,Frecov1(1:s:end,3),'g','LineWidth',2); 
+ylabel('F(N)','FontSize', 14, 'FontName', 'CMU Serif');
+    axis([0,maxt,-0.2,0.2]); legend('F_x','F_y','F_z')
+axes(ha(7)); plot(time(1:s:end)/1000,Frecov1(1:s:end,4),'r','LineWidth',2);  
+hold on; plot(time(1:s:end)/1000,Frecov1(1:s:end,5),'b','LineWidth',2); 
+    plot(time(1:s:end)/1000,Frecov1(1:s:end,6),'g','LineWidth',2); 
+ylabel('M (mN-M)','FontSize', 14, 'FontName', 'CMU Serif');
+    axis([0,maxt,-20,20]); legend('M_x','M_y','M_z')
 
-%legend('Fx','Fy','Fz')
-%subplot(2,1,2)
-%plot(Frecov1(:,4:6))
-%legend('Mx','My','Mz')
-%set(gcf,'Units','inches');
-%set(gcf,'Position',[1 1 14 16]);
+set(ha(1:6),'XTickLabel','') % only 1 time lable
+for i = 1:7
+    axes(ha(i));
+    set(gca,'FontName','CMU Serif','FontSize',14);
+    %axis([0,10,-1.5,1.5]);
+    hold on
+    temp = get(gca,'XTick');
+    plot([temp(1),temp(end)],[0,0],'k','LineWidth',1);
+    grid OFF
+    
+end
+axes(ha(7));
+xlabel('Time (s)','FontSize', 18, 'FontName', 'CMU Serif');
+set(gcf,'Units','inches');
+set(gcf,'Position',[1 1 14 16]);

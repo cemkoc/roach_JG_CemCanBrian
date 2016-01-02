@@ -1,17 +1,17 @@
+%%%%% original version written by Josh Goldberg My 2015
 clear;
 close all;
 
-processflag=1;
+processflag=3;
 % all data=1
 % vary layer=2;
 % vary spacing=3
 % vary stiffness & frequency=4
 
-plotting=0;
-makemovie=1;
-
+%%%  various options for code below- should use smaller functions instead
+plotting=1;
+makemovie=0;  %% makes a .jpg plot for each time step
 plottrials=1;
-
 filtering=0;
 filterfreq=100;
 
@@ -37,17 +37,19 @@ load(strcat(dirname1,'\telemetry\N_matrix_trial9.mat'));
 pathmov=strcat(dirname1,'\videos\plots\');
 
 if processflag==1    
-    load(strcat(dirname1,'\telemetry\all_data.mat'));
-    dirname=strcat(dirname1,'\telemetry\alldata\');
+    %load(strcat(dirname1,'\telemetry\all_data.mat'));
+    %dirname=strcat(dirname1,'\telemetry\alldata\');
+    load(strcat(dirname1,'\telemetry\testdata.mat'));
+    dirname=strcat(dirname1,'\telemetry\testdata\');
 else if processflag==2
         load(strcat(dirname1,'\telemetry\vary_layer.mat'));
         dirname=strcat(dirname1,'\telemetry\vary layer\');
     else if processflag==3
-            load(strcat(dirname1,'telemetry\vary_spacing.mat'));
-            dirname=strcat(dirname1,'telemetry\vary spacing\');
+            load(strcat(dirname1,'\telemetry\vary_spacing.mat'));
+            dirname=strcat(dirname1,'\telemetry\vary spacing\');
         else
-            load(strcat(dirname1,'telemetry\vary_stiffness_frequency.mat'));
-            dirname=strcat(dirname1,'telemetry\vary stiffness & frequency\');
+            load(strcat(dirname1,'\telemetry\vary_stiffness_frequency.mat'));
+            dirname=strcat(dirname1,'\telemetry\vary stiffness & frequency\');
         end
     end
 end
@@ -117,16 +119,15 @@ avgFFz2=zeros(lff,1);
 avgNNx2=zeros(lff,1);
 avgNNy2=zeros(lff,1);
 avgNNz2=zeros(lff,1);
-
+%return % for debugging
+cd(dirname);  % change to directory where all data files are stored
 for jj=1:lff;
     
-    cd(dirname);
     namein=char(filenamelist(jj));
     nameinnoext=char(filenamenoextlist(jj));
     disp(namein);
     load(namein);
    
-    % T = csvread('velociroach_s=3cm_w=3cm_h=10cm_layer=5_f=10Hz_beetleshell_run3.txt',9,0);
     T = csvread(namein,9,0);
 
     S = T(:,17:24);
@@ -253,7 +254,7 @@ for jj=1:lff;
     end
 
     %%
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if plotting==1
         
         figure(1);clf;
@@ -306,136 +307,25 @@ for jj=1:lff;
         xlabel('Time (s)','fontsize',ftsz);
         xlim([0 runlength*1.2]);
         ylim([min([min(NNx) min(NNy) min(NNz)]) max([max(NNx) max(NNy) max(NNz)])]);
-
+        disp('Next?')
         pause;
         
     end
 
    % return  % for debugging
     %%    
-    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if makemovie==1        
-
-        for ii=1:movstep:indend(jj)
-
-            if ii-avgwidth*samplingfreq/2<1
-                avgind=1:(1+avgwidth*samplingfreq);
-            else if ii+avgwidth*samplingfreq/2>length(timez)
-                    avgind=(length(timez)-avgwidth*samplingfreq):length(timez);
-                else
-                    avgind=(ii-avgwidth*samplingfreq/2):(ii+avgwidth*samplingfreq/2);
-                end
-            end
-                        
-            h3=figure(3);clf;hold all;
-            set(gcf,'color','w');
-            
-            subplot(2,1,1);hold all;box on;
-            plot(timez,FFx,'b-','linewidth',lnwz);
-            plot(timez,FFy,'r-','linewidth',lnwz);
-            plot(timez,FFz,'g-','linewidth',lnwz);
-            plot(timez(ii),FFx(ii),'bo','markerfacecolor','b');
-            plot(timez(ii),FFy(ii),'ro','markerfacecolor','r');
-            plot(timez(ii),FFz(ii),'go','markerfacecolor','g');
-            line([start1(jj) end1(jj)]/30,[avgFFx1(jj) avgFFx1(jj)],'color','b','linewidth',lnwz,'linestyle',':');
-            line([start1(jj) end1(jj)]/30,[avgFFy1(jj) avgFFy1(jj)],'color','r','linewidth',lnwz,'linestyle',':');
-            line([start1(jj) end1(jj)]/30,[avgFFz1(jj) avgFFz1(jj)],'color','g','linewidth',lnwz,'linestyle',':');
-            line([start2(jj) end2(jj)]/30,[avgFFx2(jj) avgFFx2(jj)],'color','b','linewidth',lnwz,'linestyle',':');
-            line([start2(jj) end2(jj)]/30,[avgFFy2(jj) avgFFy2(jj)],'color','r','linewidth',lnwz,'linestyle',':');
-            line([start2(jj) end2(jj)]/30,[avgFFz2(jj) avgFFz2(jj)],'color','g','linewidth',lnwz,'linestyle',':');
-            line([start1(jj) start1(jj)]/30,[min([min(FFx) min(FFy) min(FFz)]) max([max(FFx) max(FFy) max(FFz)])],'linestyle',':','color','k');
-            line([end1(jj) end1(jj)]/30,[min([min(FFx) min(FFy) min(FFz)]) max([max(FFx) max(FFy) max(FFz)])],'linestyle',':','color','k');
-            line([start2(jj) start2(jj)]/30,[min([min(FFx) min(FFy) min(FFz)]) max([max(FFx) max(FFy) max(FFz)])],'linestyle',':','color','k');
-            line([end2(jj) end2(jj)]/30,[min([min(FFx) min(FFy) min(FFz)]) max([max(FFx) max(FFy) max(FFz)])],'linestyle',':','color','k');
-            line([0 runlength],[0 0],'linestyle',':','color','k');
-            xlim([0 runlength*1.35]);
-            ylim([min([min(FFx) min(FFy) min(FFz)]) max([max(FFx) max(FFy) max(FFz)])]);
-            ylabel('Force (N)','fontsize',ftsz);
-            xlabel('Time (s)','fontsize',ftsz);
-            legend('Forward','Left','Upward','location','southeast');
-            set(gca,'fontsize',ftsz);
-            title(nameinnoext,'Interpreter','none');
-
-            subplot(2,1,2);hold all;box on;                                
-            plot(timez,NNx,'b-','linewidth',lnwz);
-            plot(timez,NNy,'r-','linewidth',lnwz);
-            plot(timez,NNz,'g-','linewidth',lnwz);
-            plot(timez(ii),NNx(ii),'bo','markerfacecolor','b');
-            plot(timez(ii),NNy(ii),'ro','markerfacecolor','r');
-            plot(timez(ii),NNz(ii),'go','markerfacecolor','g');
-            line([start1(jj) end1(jj)]/30,[avgNNx1(jj) avgNNx1(jj)],'color','b','linewidth',lnwz,'linestyle',':');
-            line([start1(jj) end1(jj)]/30,[avgNNy1(jj) avgNNy1(jj)],'color','r','linewidth',lnwz,'linestyle',':');
-            line([start1(jj) end1(jj)]/30,[avgNNz1(jj) avgNNz1(jj)],'color','g','linewidth',lnwz,'linestyle',':');
-            line([start2(jj) end2(jj)]/30,[avgNNx2(jj) avgNNx2(jj)],'color','b','linewidth',lnwz,'linestyle',':');
-            line([start2(jj) end2(jj)]/30,[avgNNy2(jj) avgNNy2(jj)],'color','r','linewidth',lnwz,'linestyle',':');
-            line([start2(jj) end2(jj)]/30,[avgNNz2(jj) avgNNz2(jj)],'color','g','linewidth',lnwz,'linestyle',':');
-            line([start1(jj) start1(jj)]/30,[min([min(NNx) min(NNy) min(NNz)]) max([max(NNx) max(NNy) max(NNz)])],'linestyle',':','color','k');
-            line([end1(jj) end1(jj)]/30,[min([min(NNx) min(NNy) min(NNz)]) max([max(NNx) max(NNy) max(NNz)])],'linestyle',':','color','k');
-            line([start2(jj) start2(jj)]/30,[min([min(NNx) min(NNy) min(NNz)]) max([max(NNx) max(NNy) max(NNz)])],'linestyle',':','color','k');
-            line([end2(jj) end2(jj)]/30,[min([min(NNx) min(NNy) min(NNz)]) max([max(NNx) max(NNy) max(NNz)])],'linestyle',':','color','k');
-            line([0 runlength],[0 0],'linestyle',':','color','k');
-            xlim([0 runlength*1.35]);
-            ylim([min([min(NNx) min(NNy) min(NNz)]) max([max(NNx) max(NNy) max(NNz)])]);
-            ylabel('Torque (mN*m)','fontsize',ftsz);
-            xlabel('Time (s)','fontsize',ftsz);
-            legend('Roll right','Pitch down','Yaw left','location','southeast');
-            set(gca,'fontsize',ftsz);
- 
- %return % for debugging
-            %% plot with moving time window
-            
-%             subplot(1,2,1);hold all;box on;
-%             line([min(avgind)/samplingfreq max(avgind)/samplingfreq],[0 0],'linestyle','--','color','k');        
-%             plot(timez,FFx,'b-','linewidth',lnwz);
-%             plot(timez,FFy,'r-','linewidth',lnwz);
-%             plot(timez,FFz,'g-','linewidth',lnwz);
-%             plot(timez(ii),FFx(ii),'bo','markerfacecolor','b');
-%             plot(timez(ii),FFy(ii),'ro','markerfacecolor','r');
-%             plot(timez(ii),FFz(ii),'go','markerfacecolor','k');
-%             xlim([min([max([ii/samplingfreq windowwidth/2]-windowwidth/2) runlength-windowwidth]) min([max([ii/samplingfreq windowwidth/2])+windowwidth/2 runlength])]);
-% %             ylim([0 max(PowerTotal(5:length(PowerTotal)))]);
-%             ylabel('Force (N)','fontsize',15);
-%             xlabel('Time (s)','fontsize',15);
-%             legend('F_x','F_y','F_z');
-%             set(gca,'fontsize',15);
-% %             title(strcat('P_{mean}=',num2str(meanPowerTotal(ii)),'W'));
-% 
-%             subplot(1,2,2);hold all;box on;
-%             line([min(avgind)/samplingfreq max(avgind)/samplingfreq],[0 0],'linestyle','--','color','k');        
-%             plot(timez,NNx,'b-','linewidth',lnwz);
-%             plot(timez,NNy,'r-','linewidth',lnwz);
-%             plot(timez,NNz,'g-','linewidth',lnwz);
-%             plot(timez(ii),NNx(ii),'bo','markerfacecolor','b');
-%             plot(timez(ii),NNy(ii),'ro','markerfacecolor','r');
-%             plot(timez(ii),NNz(ii),'go','markerfacecolor','k');
-%             xlim([min([max([ii/samplingfreq windowwidth/2]-windowwidth/2) runlength-windowwidth]) min([max([ii/samplingfreq windowwidth/2])+windowwidth/2 runlength])]);
-% %             ylim([0 max(PowerTotal(5:length(PowerTotal)))]);
-%             ylabel('Torque (mN*m)','fontsize',15);
-%             xlabel('Time (s)','fontsize',15);
-%             legend('N_x','N_y','N_z');
-%             set(gca,'fontsize',15);
-% %             title(strcat('P_{mean}=',num2str(meanPowerTotal(ii)),'W'));
-
-            set(gcf,'units','pixels');
-            set(gcf,'Position',[100,100,800,380]);
-            cd(pathmov);
-            mkdir(nameinnoext);
-            cd(nameinnoext);
-            export_fig(strcat(num2str(ii,'%04d'),'.jpg'),gcf,'-nocrop');
-            
-        end
-
+     makemoviefiles
     end
-
 end
-
 indend=indend';
-
+disp('Done Plotting.')
 %%
-
+%return % for debugging
 dx=0.1;dy=0;
 
-figure(100);clf;
+figure(5);clf;
 
 subplot(2,1,1);hold all;
 plot(1:lff,avgFFx1,'bo');
@@ -479,247 +369,38 @@ for ii=1:lff/3
     
     meanind=(ii-1)*3+1:(ii-1)*3+3;
    
-    avgFFx1mean(ii)=nanmean(avgFFx1(meanind));
-    avgFFy1mean(ii)=nanmean(avgFFy1(meanind));
-    avgFFz1mean(ii)=nanmean(avgFFz1(meanind));
-    avgNNx1mean(ii)=nanmean(avgNNx1(meanind));
-    avgNNy1mean(ii)=nanmean(avgNNy1(meanind));
-    avgNNz1mean(ii)=nanmean(avgNNz1(meanind));
+    avgFFx1mean(ii)=mean(avgFFx1(meanind));
+    avgFFy1mean(ii)=mean(avgFFy1(meanind));
+    avgFFz1mean(ii)=mean(avgFFz1(meanind));
+    avgNNx1mean(ii)=mean(avgNNx1(meanind));
+    avgNNy1mean(ii)=mean(avgNNy1(meanind));
+    avgNNz1mean(ii)=mean(avgNNz1(meanind));
     
-    avgFFx1std(ii)=nanstd(avgFFx1(meanind));
-    avgFFy1std(ii)=nanstd(avgFFy1(meanind));
-    avgFFz1std(ii)=nanstd(avgFFz1(meanind));
-    avgNNx1std(ii)=nanstd(avgNNx1(meanind));
-    avgNNy1std(ii)=nanstd(avgNNy1(meanind));
-    avgNNz1std(ii)=nanstd(avgNNz1(meanind));
+    avgFFx1std(ii)=std(avgFFx1(meanind));
+    avgFFy1std(ii)=std(avgFFy1(meanind));
+    avgFFz1std(ii)=std(avgFFz1(meanind));
+    avgNNx1std(ii)=std(avgNNx1(meanind));
+    avgNNy1std(ii)=std(avgNNy1(meanind));
+    avgNNz1std(ii)=std(avgNNz1(meanind));
     
-    avgFFx2mean(ii)=nanmean(avgFFx2(meanind));
-    avgFFy2mean(ii)=nanmean(avgFFy2(meanind));
-    avgFFz2mean(ii)=nanmean(avgFFz2(meanind));
-    avgNNx2mean(ii)=nanmean(avgNNx2(meanind));
-    avgNNy2mean(ii)=nanmean(avgNNy2(meanind));
-    avgNNz2mean(ii)=nanmean(avgNNz2(meanind));
+    avgFFx2mean(ii)=mean(avgFFx2(meanind));
+    avgFFy2mean(ii)=mean(avgFFy2(meanind));
+    avgFFz2mean(ii)=mean(avgFFz2(meanind));
+    avgNNx2mean(ii)=mean(avgNNx2(meanind));
+    avgNNy2mean(ii)=mean(avgNNy2(meanind));
+    avgNNz2mean(ii)=mean(avgNNz2(meanind));
     
-    avgFFx2std(ii)=nanstd(avgFFx2(meanind));
-    avgFFy2std(ii)=nanstd(avgFFy2(meanind));
-    avgFFz2std(ii)=nanstd(avgFFz2(meanind));
-    avgNNx2std(ii)=nanstd(avgNNx2(meanind));
-    avgNNy2std(ii)=nanstd(avgNNy2(meanind));
-    avgNNz2std(ii)=nanstd(avgNNz2(meanind));
+    avgFFx2std(ii)=std(avgFFx2(meanind));
+    avgFFy2std(ii)=std(avgFFy2(meanind));
+    avgFFz2std(ii)=std(avgFFz2(meanind));
+    avgNNx2std(ii)=std(avgNNx2(meanind));
+    avgNNy2std(ii)=std(avgNNy2(meanind));
+    avgNNz2std(ii)=std(avgNNz2(meanind));
     
 end
 
 %%
-
-if processflag==1    
-    
-else if processflag==2
-        
-        h101=figure(101);clf;set(gcf,'color','w');
-        
-        subplot(1,2,1);hold all;box on;
-        errorbar(layerind,avgFFx1mean,avgFFx1std,'b-','linewidth',lnwz);
-        errorbar(layerind,avgFFy1mean,avgFFy1std,'r-','linewidth',lnwz);
-        errorbar(layerind,avgFFz1mean,avgFFz1std,'g-','linewidth',lnwz);
-        if plottrials==1
-            for ii=1:lff/3
-                plot(layerind(ii),avgFFx1((ii-1)*3+1),'bo','markersize',mksz);
-                plot(layerind(ii),avgFFx1((ii-1)*3+2),'bs','markersize',mksz);
-                plot(layerind(ii),avgFFx1((ii-1)*3+3),'b^','markersize',mksz);
-                plot(layerind(ii),avgFFy1((ii-1)*3+1),'ro','markersize',mksz);
-                plot(layerind(ii),avgFFy1((ii-1)*3+2),'rs','markersize',mksz);
-                plot(layerind(ii),avgFFy1((ii-1)*3+3),'r^','markersize',mksz);
-                plot(layerind(ii),avgFFz1((ii-1)*3+1),'go','markersize',mksz);
-                plot(layerind(ii),avgFFz1((ii-1)*3+2),'gs','markersize',mksz);
-                plot(layerind(ii),avgFFz1((ii-1)*3+3),'g^','markersize',mksz);
-                
-%                 plot(layerind(ii),avgFFx2((ii-1)*3+1),'bo','markersize',mksz,'markerfacecolor','b');
-%                 plot(layerind(ii),avgFFx2((ii-1)*3+2),'bs','markersize',mksz,'markerfacecolor','b');
-%                 plot(layerind(ii),avgFFx2((ii-1)*3+3),'b^','markersize',mksz,'markerfacecolor','b');
-%                 plot(layerind(ii),avgFFy2((ii-1)*3+1),'ro','markersize',mksz,'markerfacecolor','r');
-%                 plot(layerind(ii),avgFFy2((ii-1)*3+2),'rs','markersize',mksz,'markerfacecolor','r');
-%                 plot(layerind(ii),avgFFy2((ii-1)*3+3),'r^','markersize',mksz,'markerfacecolor','r');
-%                 plot(layerind(ii),avgFFz2((ii-1)*3+1),'go','markersize',mksz,'markerfacecolor','g');
-%                 plot(layerind(ii),avgFFz2((ii-1)*3+2),'gs','markersize',mksz,'markerfacecolor','g');
-%                 plot(layerind(ii),avgFFz2((ii-1)*3+3),'g^','markersize',mksz,'markerfacecolor','g');
-            end
-        end
-        line([0 5],[0 0],'linestyle',':','color','k');        
-        xlim([-0.2 5.2]);
-        ylim([-0.08 0.16]);
-        ylabel('Force (N)','fontsize',ftsz2);
-        xlabel('Layer','fontsize',ftsz2);
-        legend('Forward','Left','Upward','location','northwest');
-        set(gca,'fontsize',ftsz2);
-        
-        subplot(1,2,2);hold all;box on;
-        errorbar(layerind,avgNNx1mean,avgNNx1std,'b-','linewidth',lnwz);
-        errorbar(layerind,avgNNy1mean,avgNNy1std,'r-','linewidth',lnwz);
-        errorbar(layerind,avgNNz1mean,avgNNz1std,'g-','linewidth',lnwz);
-        if plottrials==1
-            for ii=1:lff/3
-                plot(layerind(ii),avgNNx1((ii-1)*3+1),'bo','markersize',mksz);
-                plot(layerind(ii),avgNNx1((ii-1)*3+2),'bs','markersize',mksz);
-                plot(layerind(ii),avgNNx1((ii-1)*3+3),'b^','markersize',mksz);
-                plot(layerind(ii),avgNNy1((ii-1)*3+1),'ro','markersize',mksz);
-                plot(layerind(ii),avgNNy1((ii-1)*3+2),'rs','markersize',mksz);
-                plot(layerind(ii),avgNNy1((ii-1)*3+3),'r^','markersize',mksz);
-                plot(layerind(ii),avgNNz1((ii-1)*3+1),'go','markersize',mksz);
-                plot(layerind(ii),avgNNz1((ii-1)*3+2),'gs','markersize',mksz);
-                plot(layerind(ii),avgNNz1((ii-1)*3+3),'g^','markersize',mksz);
-            end
-        end
-        line([0 5],[0 0],'linestyle',':','color','k');
-        xlim([-0.2 5.2]);
-        ylabel('Torque (mN*m)','fontsize',ftsz2);
-        xlabel('Layer','fontsize',ftsz2);
-        legend('Roll right','Pitch down','Yaw left','location','southwest');
-        set(gca,'fontsize',ftsz2);
-        
-        saveas(h101,strcat(dirname1,'vary layer'),'fig');
-        saveas(h101,strcat(dirname1,'vary layer'),'jpg');
-        
-    else if processflag==3
-            
-            h101=figure(101);clf;set(gcf,'color','w');
-        
-            subplot(1,2,1);hold all;box on;
-            errorbar(spacingind,avgFFx1mean,avgFFx1std,'b-','linewidth',lnwz);
-            errorbar(spacingind,avgFFy1mean,avgFFy1std,'r-','linewidth',lnwz);
-            errorbar(spacingind,avgFFz1mean,avgFFz1std,'g-','linewidth',lnwz);
-            if plottrials==1
-                for ii=1:lff/3
-                    plot(spacingind(ii),avgFFx1((ii-1)*3+1),'bo','markersize',mksz);
-                    plot(spacingind(ii),avgFFx1((ii-1)*3+2),'bs','markersize',mksz);
-                    plot(spacingind(ii),avgFFx1((ii-1)*3+3),'b^','markersize',mksz);
-                    plot(spacingind(ii),avgFFy1((ii-1)*3+1),'ro','markersize',mksz);
-                    plot(spacingind(ii),avgFFy1((ii-1)*3+2),'rs','markersize',mksz);
-                    plot(spacingind(ii),avgFFy1((ii-1)*3+3),'r^','markersize',mksz);
-                    plot(spacingind(ii),avgFFz1((ii-1)*3+1),'go','markersize',mksz);
-                    plot(spacingind(ii),avgFFz1((ii-1)*3+2),'gs','markersize',mksz);
-                    plot(spacingind(ii),avgFFz1((ii-1)*3+3),'g^','markersize',mksz);
-                end
-            end
-            line([9 12],[0 0],'linestyle',':','color','k');        
-            xlim([8.8 12.2]);
-%             ylim([-0.08 0.16]);
-            ylabel('Force (N)','fontsize',ftsz2);
-            xlabel('Spacing (cm)','fontsize',ftsz2);
-            legend('Forward','Left','Upward','location','northeast');
-            set(gca,'fontsize',ftsz2);
-
-            subplot(1,2,2);hold all;box on;
-            errorbar(spacingind,avgNNx1mean,avgNNx1std,'b-','linewidth',lnwz);
-            errorbar(spacingind,avgNNy1mean,avgNNy1std,'r-','linewidth',lnwz);
-            errorbar(spacingind,avgNNz1mean,avgNNz1std,'g-','linewidth',lnwz);
-            if plottrials==1
-                for ii=1:lff/3
-                    plot(spacingind(ii),avgNNx1((ii-1)*3+1),'bo','markersize',mksz);
-                    plot(spacingind(ii),avgNNx1((ii-1)*3+2),'bs','markersize',mksz);
-                    plot(spacingind(ii),avgNNx1((ii-1)*3+3),'b^','markersize',mksz);
-                    plot(spacingind(ii),avgNNy1((ii-1)*3+1),'ro','markersize',mksz);
-                    plot(spacingind(ii),avgNNy1((ii-1)*3+2),'rs','markersize',mksz);
-                    plot(spacingind(ii),avgNNy1((ii-1)*3+3),'r^','markersize',mksz);
-                    plot(spacingind(ii),avgNNz1((ii-1)*3+1),'go','markersize',mksz);
-                    plot(spacingind(ii),avgNNz1((ii-1)*3+2),'gs','markersize',mksz);
-                    plot(spacingind(ii),avgNNz1((ii-1)*3+3),'g^','markersize',mksz);
-                end
-            end
-            line([9 12],[0 0],'linestyle',':','color','k');
-            xlim([8.8 12.2]);
-            ylim([-10 11]);
-            ylabel('Torque (mN*m)','fontsize',ftsz2);
-            xlabel('Spacing (cm)','fontsize',ftsz2);
-            legend('Roll right','Pitch down','Yaw left','location','northeast');
-            set(gca,'fontsize',ftsz2);
-
-            saveas(h101,strcat(dirname1,'vary spacing'),'fig');
-            saveas(h101,strcat(dirname1,'vary spacing'),'jpg');            
-            
-        else            
-            
-            h101=figure(101);clf;set(gcf,'color','w');
-        
-            subplot(1,2,1);hold all;box on;
-            errorbar(freqind,avgFFx1mean(4:6),avgFFx1std(4:6),'b-','linewidth',lnwz2);
-            errorbar(freqind,avgFFy1mean(4:6),avgFFy1std(4:6),'r-','linewidth',lnwz2);
-            errorbar(freqind,avgFFz1mean(4:6),avgFFz1std(4:6),'g-','linewidth',lnwz2);
-            errorbar(freqind,avgFFx1mean(1:3),avgFFx1std(1:3),'b--','linewidth',lnwz);
-            errorbar(freqind,avgFFy1mean(1:3),avgFFy1std(1:3),'r--','linewidth',lnwz);
-            errorbar(freqind,avgFFz1mean(1:3),avgFFz1std(1:3),'g--','linewidth',lnwz);            
-            if plottrials==1
-                for ii=1:lff/6
-                    plot(freqind(ii),avgFFx1(9+(ii-1)*3+1),'bo','markersize',mksz2);
-                    plot(freqind(ii),avgFFx1(9+(ii-1)*3+2),'bs','markersize',mksz2);
-                    plot(freqind(ii),avgFFx1(9+(ii-1)*3+3),'b^','markersize',mksz2);
-                    plot(freqind(ii),avgFFy1(9+(ii-1)*3+1),'ro','markersize',mksz2);
-                    plot(freqind(ii),avgFFy1(9+(ii-1)*3+2),'rs','markersize',mksz2);
-                    plot(freqind(ii),avgFFy1(9+(ii-1)*3+3),'r^','markersize',mksz2);
-                    plot(freqind(ii),avgFFz1(9+(ii-1)*3+1),'go','markersize',mksz2);
-                    plot(freqind(ii),avgFFz1(9+(ii-1)*3+2),'gs','markersize',mksz2);
-                    plot(freqind(ii),avgFFz1(9+(ii-1)*3+3),'g^','markersize',mksz2);
-                    
-                    plot(freqind(ii),avgFFx1((ii-1)*3+1),'bo','markersize',mksz);
-                    plot(freqind(ii),avgFFx1((ii-1)*3+2),'bs','markersize',mksz);
-                    plot(freqind(ii),avgFFx1((ii-1)*3+3),'b^','markersize',mksz);
-                    plot(freqind(ii),avgFFy1((ii-1)*3+1),'ro','markersize',mksz);
-                    plot(freqind(ii),avgFFy1((ii-1)*3+2),'rs','markersize',mksz);
-                    plot(freqind(ii),avgFFy1((ii-1)*3+3),'r^','markersize',mksz);
-                    plot(freqind(ii),avgFFz1((ii-1)*3+1),'go','markersize',mksz);
-                    plot(freqind(ii),avgFFz1((ii-1)*3+2),'gs','markersize',mksz);
-                    plot(freqind(ii),avgFFz1((ii-1)*3+3),'g^','markersize',mksz);
-                end
-            end
-            line([7 13],[0 0],'linestyle',':','color','k');        
-            xlim([6.8 13.2]);
-            ylim([-0.23 0.2]);
-            ylabel('Force (N)','fontsize',ftsz2);
-            xlabel('Frequency (Hz)','fontsize',ftsz2);
-            legend('Forward','Left','Upward','location','southwest');
-            set(gca,'fontsize',ftsz2);
-
-            subplot(1,2,2);hold all;box on;
-            errorbar(freqind,avgNNx1mean(4:6),avgNNx1std(4:6),'b-','linewidth',lnwz2);
-            errorbar(freqind,avgNNy1mean(4:6),avgNNy1std(4:6),'r-','linewidth',lnwz2);
-            errorbar(freqind,avgNNz1mean(4:6),avgNNz1std(4:6),'g-','linewidth',lnwz2);
-            errorbar(freqind,avgNNx1mean(1:3),avgNNx1std(1:3),'b--','linewidth',lnwz);
-            errorbar(freqind,avgNNy1mean(1:3),avgNNy1std(1:3),'r--','linewidth',lnwz);
-            errorbar(freqind,avgNNz1mean(1:3),avgNNz1std(1:3),'g--','linewidth',lnwz);
-            if plottrials==1
-                for ii=1:lff/6
-                    plot(freqind(ii),avgNNx1(9+(ii-1)*3+1),'bo','markersize',mksz2);
-                    plot(freqind(ii),avgNNx1(9+(ii-1)*3+2),'bs','markersize',mksz2);
-                    plot(freqind(ii),avgNNx1(9+(ii-1)*3+3),'b^','markersize',mksz2);
-                    plot(freqind(ii),avgNNy1(9+(ii-1)*3+1),'ro','markersize',mksz2);
-                    plot(freqind(ii),avgNNy1(9+(ii-1)*3+2),'rs','markersize',mksz2);
-                    plot(freqind(ii),avgNNy1(9+(ii-1)*3+3),'r^','markersize',mksz2);
-                    plot(freqind(ii),avgNNz1(9+(ii-1)*3+1),'go','markersize',mksz2);
-                    plot(freqind(ii),avgNNz1(9+(ii-1)*3+2),'gs','markersize',mksz2);
-                    plot(freqind(ii),avgNNz1(9+(ii-1)*3+3),'g^','markersize',mksz2);
-                    
-                    plot(freqind(ii),avgNNx1((ii-1)*3+1),'bo','markersize',mksz);
-                    plot(freqind(ii),avgNNx1((ii-1)*3+2),'bs','markersize',mksz);
-                    plot(freqind(ii),avgNNx1((ii-1)*3+3),'b^','markersize',mksz);
-                    plot(freqind(ii),avgNNy1((ii-1)*3+1),'ro','markersize',mksz);
-                    plot(freqind(ii),avgNNy1((ii-1)*3+2),'rs','markersize',mksz);
-                    plot(freqind(ii),avgNNy1((ii-1)*3+3),'r^','markersize',mksz);
-                    plot(freqind(ii),avgNNz1((ii-1)*3+1),'go','markersize',mksz);
-                    plot(freqind(ii),avgNNz1((ii-1)*3+2),'gs','markersize',mksz);
-                    plot(freqind(ii),avgNNz1((ii-1)*3+3),'g^','markersize',mksz);
-                end
-            end
-            line([7 13],[0 0],'linestyle',':','color','k');
-            xlim([6.8 13.2]);
-            ylim([-10 18]);
-            ylabel('Torque (mN*m)','fontsize',ftsz2);
-            xlabel('Frequency (Hz)','fontsize',ftsz2);
-            legend('Roll right','Pitch down','Yaw left','location','northwest');
-            set(gca,'fontsize',ftsz2);
-
-            saveas(h101,strcat(dirname1,'vary stiffness & frequency'),'fig');
-            saveas(h101,strcat(dirname1,'vary stiffness & frequency'),'jpg');
-            
-        end
-    end
-end
+% plot aggregate forces/moments in various terrain types
+cd('../../Matlab')
+%maketerrainplot
 
