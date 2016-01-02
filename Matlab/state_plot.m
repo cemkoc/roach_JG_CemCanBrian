@@ -1,5 +1,6 @@
 %%%%%%%%%%%%%%%%%%%
-%%% early version - does not read raw telemetry file - needs processed file
+%%% process and plot robot state from telemetry file, to be combined with
+%%% shell data
 %%%%%%%%%%%%%%%%%%%
 
 disp('!!requires telem file and processed file!!')
